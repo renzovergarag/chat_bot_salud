@@ -1,0 +1,37 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asistente Virtual de Morbilidad</title>
+  <link rel="stylesheet" href="{% static 'solicitudes/chatbot.css' %}">
+</head>
+<body>
+  <main class="chat-shell" aria-label="Chatbot CESFAM">
+    <header class="chat-header">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">✦</div>
+        <div>
+          <h1>Asistente Virtual de Morbilidad</h1>
+          <p>CESFAM Rodelillo</p>
+        </div>
+      </div>
+      <div class="status"><span></span> En linea</div>
+    </header>
+
+    <section id="messages" class="messages" aria-live="polite"></section>
+
+    <form id="chatForm" class="composer" autocomplete="off">
+      <label class="sr-only" for="messageInput">Mensaje</label>
+      <input id="messageInput" type="text" placeholder="Escribe tu respuesta..." autofocus>
+      <button type="submit" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.4 20.4 21 12 3.4 3.6l2.2 7.2L14 12l-8.4 1.2-2.2 7.2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </form>
+  </main>
+  <script src="{% static 'solicitudes/chatbot.js' %}"></script>
+</body>
+</html>

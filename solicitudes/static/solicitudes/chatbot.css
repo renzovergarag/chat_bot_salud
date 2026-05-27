@@ -1,0 +1,261 @@
+:root {
+  color-scheme: light;
+  --bg: #dce6ff;
+  --bg-soft: #efe6ff;
+  --panel: #eef2ff;
+  --bubble: #ffffff;
+  --primary: #2f9fee;
+  --primary-dark: #177bc6;
+  --text: #111827;
+  --muted: #64748b;
+  --line: #c8d7f5;
+  --success: #22c55e;
+  --danger: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--bg-soft), var(--bg));
+}
+
+.chat-shell {
+  width: min(100%, 720px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: rgba(226, 233, 255, 0.92);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  box-shadow: 0 0 34px rgba(15, 23, 42, 0.18);
+}
+
+.chat-header {
+  min-height: 92px;
+  padding: 18px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(246, 244, 255, 0.72);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-icon {
+  color: var(--primary);
+  font-size: 26px;
+  line-height: 1;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(18px, 4.4vw, 22px);
+  line-height: 1.15;
+}
+
+.brand p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #15803d;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.status span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--success);
+}
+
+.messages {
+  padding: 18px 14px 22px;
+  overflow-y: auto;
+}
+
+.message-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  gap: 8px;
+  margin: 18px 0;
+  align-items: end;
+}
+
+.message-row.user {
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--primary);
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
+}
+
+.avatar.user-avatar {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.bubble {
+  width: fit-content;
+  max-width: min(100%, 450px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--bubble);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bot .bubble {
+  border-bottom-left-radius: 4px;
+}
+
+.user .bubble {
+  justify-self: end;
+  color: #ffffff;
+  background: var(--primary);
+  border-bottom-right-radius: 4px;
+}
+
+.summary-card {
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid #aed0f4;
+  border-radius: 10px;
+  background: #eff7ff;
+  color: #1e3a8a;
+}
+
+.summary-card strong {
+  display: block;
+  color: #0f172a;
+  margin-bottom: 5px;
+}
+
+.error-text {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  gap: 8px;
+  padding: 12px 12px;
+  background: rgba(228, 235, 255, 0.95);
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.composer input {
+  width: 100%;
+  min-height: 46px;
+  border: 2px solid var(--primary);
+  border-radius: 14px;
+  padding: 0 14px;
+  font-size: 16px;
+  outline: none;
+  background: #ffffff;
+}
+
+.composer input:disabled {
+  color: #94a3b8;
+  background: #f1f5f9;
+  border-color: #dbeafe;
+}
+
+.composer button {
+  width: 48px;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.composer button:disabled {
+  cursor: not-allowed;
+  background: #93c5fd;
+}
+
+.composer svg {
+  width: 24px;
+  height: 24px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 520px) {
+  .chat-header {
+    min-height: 84px;
+    padding: 14px 12px;
+  }
+
+  .status {
+    font-size: 13px;
+  }
+
+  .messages {
+    padding: 12px 8px 18px;
+  }
+
+  .message-row {
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    gap: 6px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .bubble {
+    max-width: 86vw;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+}

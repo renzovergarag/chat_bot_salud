@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SaludBot</title>
+  <link rel="stylesheet" href="{% static 'css/saludbot.css' %}?v=7">
+</head>
+<body>
+  <main
+    class="saludbot"
+    data-centro="{{ nombre_cesfam|default:'Corporacion Municipal de Valparaiso' }}"
+    data-user-name="{{ user_name|default:'' }}"
+  >
+    <header class="saludbot__header">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z"/>
+          </svg>
+        </div>
+        <div class="brand__copy">
+          <p class="eyebrow">{{ nombre_cesfam|default:"Corporacion Municipal de Valparaiso" }}</p>
+          <h1>SaludBot</h1>
+          <p>Asistente virtual de salud familiar</p>
+        </div>
+      </div>
+      <div class="online" aria-label="Estado: En linea">
+        <span aria-hidden="true"></span>
+        En linea
+      </div>
+    </header>
+
+    <section class="notice" aria-label="Informacion importante">
+      <strong>Atencion primaria</strong>
+      SaludBot no entrega diagnosticos. Recopila informacion inicial para orientar la seleccion de morbilidad.
+    </section>
+
+    <section id="chatMessages" class="chat" aria-live="polite" aria-label="Conversacion con SaludBot"></section>
+
+    <form id="chatForm" class="composer" autocomplete="off">
+      {% csrf_token %}
+      <label class="sr-only" for="chatInput">Escribe tu respuesta</label>
+      <input id="chatInput" type="text" inputmode="text" placeholder="Escribe tu respuesta..." autocomplete="off">
+      <button type="submit" aria-label="Enviar mensaje">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3.5 20.2 21 12 3.5 3.8l2.1 6.9L14 12l-8.4 1.3-2.1 6.9Z"/>
+        </svg>
+      </button>
+    </form>
+  </main>
+
+  <script src="{% static 'js/saludbot.js' %}?v=7"></script>
+</body>
+</html>

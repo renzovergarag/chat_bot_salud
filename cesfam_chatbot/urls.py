@@ -1,0 +1,13 @@
+from django.contrib import admin
+from django.urls import path
+
+from solicitudes import views
+
+
+urlpatterns = [
+    path("", views.saludbot, name="home"),
+    path("chatbot/", views.chatbot, name="chatbot"),
+    path("saludbot/", views.saludbot, name="saludbot"),
+    path("api/solicitudes/", views.crear_solicitud, name="crear_solicitud"),
+    path("admin/", admin.site.urls),
+]
