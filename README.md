@@ -174,6 +174,27 @@ db.sqlite3
 staticfiles/
 ```
 
-## Despliegue
+## Despliegue En Render
 
-Para produccion con Django + MySQL se recomienda un VPS o hosting compatible con Python. Firebase Hosting puede servir frontend estatico, pero no ejecuta Django directamente.
+Render debe instalar dependencias, recopilar archivos estaticos y luego arrancar Gunicorn.
+
+```text
+Build Command: pip install -r requirements.txt && python manage.py collectstatic --noinput
+Start Command: gunicorn cesfam_chatbot.wsgi:application
+```
+
+Variables de entorno recomendadas:
+
+```env
+DEBUG=False
+SECRET_KEY=una_clave_larga_y_segura
+ALLOWED_HOSTS=chat-bot-salud.onrender.com
+DB_ENGINE=mysql
+DB_NAME=nombre_base_datos
+DB_USER=usuario_base_datos
+DB_PASSWORD=password_base_datos
+DB_HOST=host_real_de_mysql
+DB_PORT=3306
+```
+
+`DB_HOST=127.0.0.1` solo funciona para MySQL local. En Render debe apuntar al host real de la base de datos.
