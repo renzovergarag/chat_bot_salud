@@ -19,6 +19,7 @@ class SolicitudTests(TestCase):
             "centro_salud": "620",
             "credendencial_cuidador_discapacidad": False,
             "Neurodivergente_prais_gestante": False,
+            "acepta_terminos": True,
             "motivo": "consulta medica",
             "detalle_motivo": "dolor de garganta hace tres dias",
         }
@@ -37,6 +38,7 @@ class SolicitudTests(TestCase):
         self.assertEqual(solicitud.puntaje_prioridad, 0)
         self.assertEqual(solicitud.rut, "25747311-2")
         self.assertEqual(solicitud.centro_salud, "620")
+        self.assertTrue(solicitud.acepta_terminos)
 
     def test_rechaza_rut_invalido(self):
         with self.assertRaises(ValidationError):
@@ -101,6 +103,18 @@ class SolicitudTests(TestCase):
         self.assertEqual(body["resumen"]["rut"], "25747311-2")
         self.assertEqual(body["resumen"]["centro_salud"], "620")
 
+    def test_endpoint_rechaza_sin_terminos(self):
+        payload = self.valid_payload()
+        payload["acepta_terminos"] = False
+        response = self.client.post(
+            reverse("crear_solicitud"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Solicitud.objects.count(), 0)
+
     def test_endpoint_acepta_payload_saludbot(self):
         response = self.client.post(
             reverse("crear_solicitud"),
@@ -112,6 +126,7 @@ class SolicitudTests(TestCase):
                     "centro_salud": "620",
                     "motivo": "Tengo fiebre",
                     "detalle_motivo": "Fiebre desde ayer con dolor de cuerpo",
+                    "acepta_terminos": True,
                 }
             ),
             content_type="application/json",
@@ -124,3 +139,26 @@ class SolicitudTests(TestCase):
         self.assertEqual(solicitud.sexo, "N")
         self.assertEqual(solicitud.puntaje_prioridad, 1)
         self.assertEqual(solicitud.priorizacion_solicitud, "BAJA")
+
+    def test_endpoint_guarda_condicion_otro_y_foto(self):
+        payload = self.valid_payload()
+        payload.update(
+            {
+                "credendencial_cuidador_discapacidad": True,
+                "credencial_cuidador_discapacidad_foto": "data:image/png;base64,AAA",
+                "Neurodivergente_prais_gestante": True,
+                "Neurodivergente_prais_gestante_tipo": "OTRO",
+                "Neurodivergente_prais_gestante_otro": "otra condicion",
+            }
+        )
+        response = self.client.post(
+            reverse("crear_solicitud"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        solicitud = Solicitud.objects.get()
+        self.assertEqual(solicitud.credencial_cuidador_discapacidad_foto, "data:image/png;base64,AAA")
+        self.assertEqual(solicitud.Neurodivergente_prais_gestante_tipo, "OTRO")
+        self.assertEqual(solicitud.Neurodivergente_prais_gestante_otro, "otra condicion")

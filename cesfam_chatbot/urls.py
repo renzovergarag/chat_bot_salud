@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.saludbot, name="home"),
     path("chatbot/", views.chatbot, name="chatbot"),
     path("saludbot/", views.saludbot, name="saludbot"),
+    path("terminos/", views.terminos, name="terminos"),
     path("api/solicitudes/", views.crear_solicitud, name="crear_solicitud"),
     path("admin/", admin.site.urls),
 ]

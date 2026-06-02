@@ -6,22 +6,29 @@
   const submitButton = form.querySelector("button");
   const INACTIVITY_LIMIT_MS = 20 * 60 * 1000;
 
-  const centroInicial = root.dataset.centro || "CESFAM Rodelillo";
+  const centroInicial = root.dataset.centro || "Corporacion Municipal de Valparaiso";
   const userName = root.dataset.userName || "";
   const centrosSalud = [
     { id: "600", nombre: "Centro De Salud Familiar Laguna Verde" },
-    { id: "605", nombre: "Centro De Salud Familiar Placilla (Valparaíso)" },
+    { id: "605", nombre: "Centro De Salud Familiar Placilla (Valparaiso)" },
     { id: "610", nombre: "Centro De Salud Familiar Placeres" },
-    { id: "615", nombre: "Centro De Salud Familiar Barón" },
+    { id: "615", nombre: "Centro De Salud Familiar Baron" },
     { id: "620", nombre: "Centro De Salud Familiar Rodelillo" },
-    { id: "621", nombre: "Centro De Salud Familiar Padre Damián Molokai" },
+    { id: "621", nombre: "Centro De Salud Familiar Padre Damian Molokai" },
     { id: "625", nombre: "Centro De Salud Familiar Quebrada Verde" },
-    { id: "630", nombre: "Centro De Salud Familiar Las Cañas" },
+    { id: "630", nombre: "Centro De Salud Familiar Las Canas" },
     { id: "635", nombre: "Centro De Salud Familiar Mena" },
     { id: "640", nombre: "Centro De Salud Familiar Puertas Negras" },
     { id: "645", nombre: "Centro De Salud Familiar Cordillera" },
     { id: "650", nombre: "Centro De Salud Familiar Esperanza" },
     { id: "655", nombre: "Centro De Salud Familiar Reina Isabel II" },
+  ];
+  const condicionOpciones = [
+    { id: "NEURODIVERGENTE", nombre: "Neurodivergente" },
+    { id: "CUIDADOR_NEURODIVERGENTE", nombre: "Cuidador neurodivergente" },
+    { id: "PRAIS", nombre: "PRAIS" },
+    { id: "GESTANTE", nombre: "Gestante" },
+    { id: "OTRO", nombre: "Otro" },
   ];
 
   const state = {
@@ -36,27 +43,27 @@
   const steps = [
     {
       field: "motivo",
-      prompt: "Cuéntame el motivo principal de tu consulta de morbilidad.",
+      prompt: "Cuentame el motivo principal de tu consulta de morbilidad.",
       validate: minLength("Describe el motivo de consulta con al menos 3 caracteres.", 3),
     },
     {
       field: "detalle_sintomas",
-      prompt: "Gracias. Ahora describe tus síntomas, desde cuándo comenzaron y si han cambiado.",
-      validate: minLength("Describe tus síntomas con al menos 20 caracteres para orientar mejor la atención.", 20),
+      prompt: "Gracias. Ahora describe tus sintomas, desde cuando comenzaron y si han cambiado.",
+      validate: minLength("Describe tus sintomas con al menos 20 caracteres para orientar mejor la atencion.", 20),
     },
     {
       field: "rut",
-      prompt: "Indícame tu RUT. Ejemplo: 12.345.678-9.",
+      prompt: "Indicame tu RUT. Ejemplo: 12.345.678-9.",
       validate(value) {
         return isValidRut(value)
           ? null
-          : "El RUT ingresado no es válido. Usa el formato 12.345.678-9.";
+          : "El RUT ingresado no es valido. Usa el formato 12.345.678-9.";
       },
       transform: normalizeRutForStorage,
     },
     {
       field: "nombre",
-      prompt: "Perfecto. Indícame tu nombre completo.",
+      prompt: "Perfecto. Indicame tu nombre completo.",
       validate: validateFullName,
       skip() {
         return Boolean(userName);
@@ -67,12 +74,12 @@
     },
     {
       field: "edad",
-      prompt: "¿Cuál es tu edad?",
+      prompt: "Cual es tu edad?",
       validate(value) {
         const number = Number(value);
         return Number.isInteger(number) && number >= 0 && number <= 120
           ? null
-          : "Ingresa una edad válida entre 0 y 120.";
+          : "Ingresa una edad valida entre 0 y 120.";
       },
       transform(value) {
         return Number(value);
@@ -80,11 +87,11 @@
     },
     {
       field: "telefono",
-      prompt: "Indícame un teléfono de contacto. Ejemplo: +56912345678.",
+      prompt: "Indicame un telefono de contacto. Ejemplo: +56912345678.",
       validate(value) {
         return /^\+569\d{8}$/.test(value.trim())
           ? null
-          : "Ingresa un teléfono válido con formato +56912345678.";
+          : "Ingresa un telefono valido con formato +56912345678.";
       },
     },
     {
@@ -94,7 +101,7 @@
       validate(value) {
         return centrosSalud.some((centro) => centro.id === value)
           ? null
-          : "Selecciona una opción de CESFAM de la lista.";
+          : "Selecciona una opcion de CESFAM de la lista.";
       },
       display(value) {
         return centrosSalud.find((centro) => centro.id === value)?.nombre || value;
@@ -102,9 +109,9 @@
     },
     {
       field: "credendencial_cuidador_discapacidad",
-      prompt: "¿Cuentas con credencial de discapacidad o eres cuidador/a?",
+      prompt: "Cuentas con credencial de discapacidad o eres cuidador/a?",
       options: [
-        { id: "true", nombre: "Sí" },
+        { id: "true", nombre: "Si" },
         { id: "false", nombre: "No" },
       ],
       validate: validateBooleanOption,
@@ -112,15 +119,66 @@
       display: displayBooleanOption,
     },
     {
+      field: "credencial_cuidador_discapacidad_foto",
+      prompt: "Puedes tomar una foto de la credencial para adjuntarla a la solicitud.",
+      type: "photo",
+      skip() {
+        return !state.data.credendencial_cuidador_discapacidad;
+      },
+      defaultValue() {
+        return "";
+      },
+    },
+    {
       field: "Neurodivergente_prais_gestante",
-      prompt: "¿Eres persona neurodivergente, PRAIS o gestante?",
+      prompt: "Eres persona neurodivergente, PRAIS o gestante?",
       options: [
-        { id: "true", nombre: "Sí" },
+        { id: "true", nombre: "Si" },
         { id: "false", nombre: "No" },
       ],
       validate: validateBooleanOption,
       transform: valueToBoolean,
       display: displayBooleanOption,
+    },
+    {
+      field: "Neurodivergente_prais_gestante_tipo",
+      prompt: "Especifica la condicion declarada.",
+      options: condicionOpciones,
+      skip() {
+        return !state.data.Neurodivergente_prais_gestante;
+      },
+      defaultValue() {
+        return "";
+      },
+      validate(value) {
+        return condicionOpciones.some((option) => option.id === value)
+          ? null
+          : "Selecciona una opcion para continuar.";
+      },
+      display(value) {
+        return displayCondicion(value);
+      },
+    },
+    {
+      field: "Neurodivergente_prais_gestante_otro",
+      prompt: "Especifica la condicion en un maximo de 50 caracteres.",
+      skip() {
+        return state.data.Neurodivergente_prais_gestante_tipo !== "OTRO";
+      },
+      defaultValue() {
+        return "";
+      },
+      validate(value) {
+        const text = value.trim();
+        if (!text) return "Escribe el detalle de la opcion otro.";
+        if (text.length > 50) return "El detalle debe tener maximo 50 caracteres.";
+        return null;
+      },
+    },
+    {
+      field: "acepta_terminos",
+      prompt: "Antes de continuar, debes aceptar los Terminos y Condiciones de uso de la plataforma.",
+      type: "terms",
     },
   ];
 
@@ -137,7 +195,7 @@
   }
 
   function validateBooleanOption(value) {
-    return ["true", "false"].includes(value) ? null : "Selecciona Sí o No para continuar.";
+    return ["true", "false"].includes(value) ? null : "Selecciona Si o No para continuar.";
   }
 
   function valueToBoolean(value) {
@@ -145,7 +203,11 @@
   }
 
   function displayBooleanOption(value) {
-    return value === "true" ? "Sí" : "No";
+    return value === "true" ? "Si" : "No";
+  }
+
+  function displayCondicion(value) {
+    return condicionOpciones.find((option) => option.id === value)?.nombre || "";
   }
 
   function botIcon() {
@@ -192,18 +254,13 @@
   function scrollToLatest(target) {
     window.requestAnimationFrame(() => {
       messages.scrollTo({
-        top: Math.max(messages.scrollHeight - messages.clientHeight + 24, 0),
+        top: Math.max(messages.scrollHeight - messages.clientHeight + 32, 0),
         behavior: "smooth",
       });
       window.setTimeout(() => {
         const element = target || messages.lastElementChild;
         if (!element) return;
-
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "nearest",
-        });
+        element.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
       }, 80);
     });
   }
@@ -213,7 +270,7 @@
     input.disabled = true;
     submitButton.disabled = true;
 
-    const row = addMessage('<span class="typing">SaludBot está escribiendo...</span>', "bot", { html: true });
+    const row = addMessage('<span class="typing">SaludBot esta escribiendo...</span>', "bot", { html: true });
     window.setTimeout(() => {
       row.remove();
       state.waiting = false;
@@ -234,17 +291,23 @@
     }
 
     if (step.skip && step.skip()) {
-      state.data[step.field] = step.defaultValue();
+      state.data[step.field] = step.defaultValue ? step.defaultValue() : "";
       state.index += 1;
       askCurrentStep();
       return;
     }
 
-    let prompt = step.prompt;
-    if (step.defaultHint) {
-      prompt += ` Puedes confirmar escribiendo "${step.defaultHint()}".`;
+    if (step.type === "photo") {
+      showTyping(() => addMessage(`${escapeHtml(step.prompt)}${renderPhotoCapture()}`, "bot", { html: true }));
+      return;
     }
 
+    if (step.type === "terms") {
+      showTyping(() => addMessage(`${escapeHtml(step.prompt)}${renderTermsAcceptance()}`, "bot", { html: true }));
+      return;
+    }
+
+    let prompt = step.prompt;
     if (step.options) {
       prompt += renderOptionButtons(step.options);
     }
@@ -253,7 +316,7 @@
   }
 
   function quickActions() {
-    const actions = ["Tengo fiebre", "Dolor o malestar", "Síntomas respiratorios", "Control o medicamento", "Otra consulta"];
+    const actions = ["Tengo fiebre", "Dolor o malestar", "Sintomas respiratorios", "Control o medicamento", "Otra consulta"];
     return `
       <div class="quick-actions" aria-label="Opciones rapidas">
         ${actions.map((label) => `<button class="quick-action" type="button" data-value="${escapeAttr(label)}">${escapeHtml(label)}</button>`).join("")}
@@ -263,7 +326,7 @@
 
   function renderOptionButtons(options) {
     return `
-      <div class="quick-actions quick-actions--list" aria-label="Opciones de CESFAM">
+      <div class="quick-actions quick-actions--list" aria-label="Opciones disponibles">
         ${options
           .map(
             (option) =>
@@ -274,10 +337,33 @@
     `;
   }
 
+  function renderPhotoCapture() {
+    return `
+      <div class="attachment-actions">
+        <input class="sr-only" type="file" accept="image/*" capture="environment" data-photo-input>
+        <button class="summary-action" type="button" data-photo-action="capture">Tomar foto de credencial</button>
+        <button class="summary-action" type="button" data-photo-action="skip">Continuar sin foto</button>
+        <p class="field-hint">La foto se adjunta solo a esta solicitud.</p>
+      </div>
+    `;
+  }
+
+  function renderTermsAcceptance() {
+    return `
+      <div class="terms-box">
+        <label class="terms-check">
+          <input type="checkbox" data-terms-checkbox>
+          <span>Acepto los <a href="/terminos/" target="_blank" rel="noopener">Terminos y Condiciones</a> de uso de la plataforma</span>
+        </label>
+        <button class="summary-action" type="button" data-terms-action="accept" disabled>Continuar</button>
+      </div>
+    `;
+  }
+
   function start() {
     const greetingName = userName ? `, ${escapeHtml(userName)}` : "";
     addMessage(
-      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudaré a seleccionar el motivo de morbilidad y recopilar la información necesaria para tu atención.${quickActions()}`,
+      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudare a seleccionar el motivo de morbilidad y recopilar la informacion necesaria para tu atencion.${quickActions()}`,
       "bot",
       { html: true }
     );
@@ -285,22 +371,33 @@
   }
 
   function showSummary() {
+    if (!state.data.acepta_terminos) {
+      askCurrentStep();
+      return;
+    }
+
     state.complete = true;
     input.disabled = true;
     submitButton.disabled = true;
+
+    const condicion = state.data.Neurodivergente_prais_gestante
+      ? `${displayCondicion(state.data.Neurodivergente_prais_gestante_tipo)}${state.data.Neurodivergente_prais_gestante_otro ? `: ${state.data.Neurodivergente_prais_gestante_otro}` : ""}`
+      : "No";
 
     const summary = `
       <strong>Revisa los datos antes de continuar.</strong>
       <div class="summary">
         <div class="summary__item"><span>Motivo</span><strong>${escapeHtml(state.data.motivo)}</strong></div>
-        <div class="summary__item"><span>Síntomas</span><strong>${escapeHtml(state.data.detalle_sintomas)}</strong></div>
+        <div class="summary__item"><span>Sintomas</span><strong>${escapeHtml(state.data.detalle_sintomas)}</strong></div>
         <div class="summary__item"><span>RUT</span><strong>${escapeHtml(state.data.rut)}</strong></div>
         <div class="summary__item"><span>Nombre</span><strong>${escapeHtml(state.data.nombre)}</strong></div>
         <div class="summary__item"><span>Edad</span><strong>${escapeHtml(state.data.edad)}</strong></div>
-        <div class="summary__item"><span>Teléfono</span><strong>${escapeHtml(state.data.telefono)}</strong></div>
+        <div class="summary__item"><span>Telefono</span><strong>${escapeHtml(state.data.telefono)}</strong></div>
         <div class="summary__item"><span>CESFAM</span><strong>${escapeHtml(state.selectedCentroName)}</strong></div>
-        <div class="summary__item"><span>Credencial/cuidador</span><strong>${state.data.credendencial_cuidador_discapacidad ? "Sí" : "No"}</strong></div>
-        <div class="summary__item"><span>Neurodivergente/PRAIS/gestante</span><strong>${state.data.Neurodivergente_prais_gestante ? "Sí" : "No"}</strong></div>
+        <div class="summary__item"><span>Credencial/cuidador</span><strong>${state.data.credendencial_cuidador_discapacidad ? "Si" : "No"}</strong></div>
+        <div class="summary__item"><span>Foto credencial</span><strong>${state.data.credencial_cuidador_discapacidad_foto ? "Adjunta" : "No adjunta"}</strong></div>
+        <div class="summary__item"><span>Neurodivergente/PRAIS/gestante</span><strong>${escapeHtml(condicion)}</strong></div>
+        <div class="summary__item"><span>Terminos</span><strong>Aceptados</strong></div>
       </div>
       <div class="summary-actions">
         <button class="summary-action" type="button" data-final-action="send">Confirmar y enviar</button>
@@ -321,6 +418,7 @@
     messages.innerHTML = "";
     input.disabled = false;
     submitButton.disabled = false;
+    input.placeholder = "Escribe tu respuesta...";
     input.value = "";
     start();
     scrollToLatest();
@@ -341,8 +439,9 @@
     messages.innerHTML = "";
     input.disabled = false;
     submitButton.disabled = false;
+    input.placeholder = "Escribe tu respuesta...";
     input.value = "";
-    addMessage("La conversación se reinició por inactividad de 20 minutos.", "bot");
+    addMessage("La conversacion se reinicio por inactividad de 20 minutos.", "bot");
     start();
   }
 
@@ -367,7 +466,11 @@
       telefono: state.data.telefono,
       centro_salud: state.data.centro_salud,
       credendencial_cuidador_discapacidad: state.data.credendencial_cuidador_discapacidad,
+      credencial_cuidador_discapacidad_foto: state.data.credencial_cuidador_discapacidad_foto || "",
       Neurodivergente_prais_gestante: state.data.Neurodivergente_prais_gestante,
+      Neurodivergente_prais_gestante_tipo: state.data.Neurodivergente_prais_gestante_tipo || "",
+      Neurodivergente_prais_gestante_otro: state.data.Neurodivergente_prais_gestante_otro || "",
+      acepta_terminos: state.data.acepta_terminos,
       motivo: state.data.motivo,
       detalle_motivo: state.data.detalle_sintomas,
     };
@@ -403,9 +506,9 @@
 
   function askAnotherSolicitud() {
     addMessage(
-      `¿Deseas realizar otra solicitud?
+      `Deseas realizar otra solicitud?
       <div class="summary-actions">
-        <button class="summary-action" type="button" data-post-action="restart">Sí</button>
+        <button class="summary-action" type="button" data-post-action="restart">Si</button>
         <button class="summary-action" type="button" data-post-action="close">No</button>
       </div>`,
       "bot",
@@ -416,12 +519,12 @@
   function closeConversation() {
     input.disabled = true;
     submitButton.disabled = true;
-    input.placeholder = "La conversación ha finalizado.";
-    addMessage("Gracias. La conversación ha finalizado.", "bot");
+    input.placeholder = "La conversacion ha finalizado.";
+    addMessage("Gracias. La conversacion ha finalizado.", "bot");
   }
 
   function disableSiblingActions(button) {
-    const container = button.closest(".summary-actions");
+    const container = button.closest(".summary-actions, .attachment-actions, .terms-box");
     if (!container) return;
 
     container.querySelectorAll("button").forEach((actionButton) => {
@@ -433,6 +536,8 @@
   function submitValue(value) {
     resetInactivityTimer();
     const step = steps[state.index];
+    if (!step) return;
+
     const error = step.validate(value);
     const displayValue = step.display ? step.display(value) : value;
     addMessage(displayValue, "user");
@@ -446,6 +551,29 @@
     if (step.field === "centro_salud") {
       state.selectedCentroName = displayValue;
     }
+    state.index += 1;
+    askCurrentStep();
+  }
+
+  function handlePhotoFile(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.data.credencial_cuidador_discapacidad_foto = String(reader.result || "");
+      addMessage("Foto de credencial adjunta", "user");
+      state.index += 1;
+      askCurrentStep();
+    };
+    reader.onerror = () => {
+      addMessage('<span class="error">No se pudo leer la foto. Puedes intentar nuevamente o continuar sin foto.</span>', "bot", { html: true });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function acceptTerms() {
+    state.data.acepta_terminos = true;
+    addMessage("Acepto los Terminos y Condiciones", "user");
     state.index += 1;
     askCurrentStep();
   }
@@ -521,9 +649,31 @@
     const quickButton = event.target.closest("[data-value]");
     const finalButton = event.target.closest("[data-final-action]");
     const postButton = event.target.closest("[data-post-action]");
+    const photoButton = event.target.closest("[data-photo-action]");
+    const termsButton = event.target.closest("[data-terms-action]");
 
     if (quickButton && !state.waiting && !state.complete) {
       submitValue(quickButton.dataset.value);
+      return;
+    }
+
+    if (photoButton && !photoButton.disabled) {
+      if (photoButton.dataset.photoAction === "capture") {
+        const fileInput = photoButton.closest(".attachment-actions").querySelector("[data-photo-input]");
+        fileInput.click();
+      } else {
+        disableSiblingActions(photoButton);
+        state.data.credencial_cuidador_discapacidad_foto = "";
+        addMessage("Continuar sin foto", "user");
+        state.index += 1;
+        askCurrentStep();
+      }
+      return;
+    }
+
+    if (termsButton && !termsButton.disabled) {
+      disableSiblingActions(termsButton);
+      acceptTerms();
       return;
     }
 
@@ -544,6 +694,27 @@
       restart();
     } else {
       finish();
+    }
+  });
+
+  messages.addEventListener("change", (event) => {
+    resetInactivityTimer();
+    const fileInput = event.target.closest("[data-photo-input]");
+    const termsCheckbox = event.target.closest("[data-terms-checkbox]");
+
+    if (fileInput) {
+      if (!fileInput.files[0]) return;
+      const container = fileInput.closest(".attachment-actions");
+      container.querySelectorAll("button").forEach((button) => {
+        button.disabled = true;
+      });
+      handlePhotoFile(fileInput.files[0]);
+      return;
+    }
+
+    if (termsCheckbox) {
+      const button = termsCheckbox.closest(".terms-box").querySelector("[data-terms-action]");
+      button.disabled = !termsCheckbox.checked;
     }
   });
 

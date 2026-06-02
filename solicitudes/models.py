@@ -1,4 +1,5 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -33,6 +34,13 @@ class Solicitud(models.Model):
         ESPERANZA = "650", "Centro De Salud Familiar Esperanza"
         REINA_ISABEL = "655", "Centro De Salud Familiar Reina Isabel II"
 
+    class TipoCondicion(models.TextChoices):
+        NEURODIVERGENTE = "NEURODIVERGENTE", "Neurodivergente"
+        CUIDADOR_NEURODIVERGENTE = "CUIDADOR_NEURODIVERGENTE", "Cuidador neurodivergente"
+        PRAIS = "PRAIS", "PRAIS"
+        GESTANTE = "GESTANTE", "Gestante"
+        OTRO = "OTRO", "Otro"
+
     id_solicitud = models.BigAutoField(primary_key=True)
     rut = models.CharField(max_length=12, validators=[validar_rut_chileno])
     edad = models.PositiveSmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(120)])
@@ -40,7 +48,15 @@ class Solicitud(models.Model):
     telefono = models.CharField(max_length=12, validators=[validar_telefono_chileno])
     centro_salud = models.CharField(max_length=3, choices=CentroSalud.choices)
     credendencial_cuidador_discapacidad = models.BooleanField(default=False)
+    credencial_cuidador_discapacidad_foto = models.TextField(blank=True)
     Neurodivergente_prais_gestante = models.BooleanField(default=False)
+    Neurodivergente_prais_gestante_tipo = models.CharField(
+        max_length=32,
+        choices=TipoCondicion.choices,
+        blank=True,
+    )
+    Neurodivergente_prais_gestante_otro = models.CharField(max_length=50, blank=True)
+    acepta_terminos = models.BooleanField(default=False)
     motivo = models.CharField(max_length=160)
     detalle_motivo = models.TextField()
     fecha_solicitud = models.DateField(default=timezone.localdate)
@@ -60,3 +76,27 @@ class Solicitud(models.Model):
         super().clean()
         if self.rut:
             self.rut = formatear_rut_sin_puntos(self.rut)
+
+        if not self.acepta_terminos:
+            raise ValidationError({"acepta_terminos": "Debes aceptar los terminos y condiciones."})
+
+        if not self.credendencial_cuidador_discapacidad:
+            self.credencial_cuidador_discapacidad_foto = ""
+
+        if not self.Neurodivergente_prais_gestante:
+            self.Neurodivergente_prais_gestante_tipo = ""
+            self.Neurodivergente_prais_gestante_otro = ""
+            return
+
+        if self.Neurodivergente_prais_gestante and not self.Neurodivergente_prais_gestante_tipo:
+            raise ValidationError(
+                {"Neurodivergente_prais_gestante_tipo": "Debes especificar la condicion declarada."}
+            )
+
+        if self.Neurodivergente_prais_gestante_tipo == self.TipoCondicion.OTRO and not self.Neurodivergente_prais_gestante_otro.strip():
+            raise ValidationError(
+                {"Neurodivergente_prais_gestante_otro": "Debes especificar la opcion otro."}
+            )
+
+        if self.Neurodivergente_prais_gestante_tipo != self.TipoCondicion.OTRO:
+            self.Neurodivergente_prais_gestante_otro = ""

@@ -121,6 +121,16 @@ Campos relevantes:
 - `centro_salud`: se guarda como ID, por ejemplo `635`.
 - `priorizacion_solicitud`: `URGENTE`, `ALTA`, `MEDIA` o `BAJA`.
 - `puntaje_prioridad`: puntaje interno calculado por reglas.
+- `credencial_cuidador_discapacidad_foto`: adjunto de foto en base64 cuando el paciente decide tomarla.
+- `Neurodivergente_prais_gestante_tipo`: especificacion interna cuando declara neurodivergente, cuidador neurodivergente, PRAIS, gestante u otro.
+- `Neurodivergente_prais_gestante_otro`: texto maximo de 50 caracteres para la opcion `OTRO`.
+- `acepta_terminos`: debe quedar en `True` para permitir el registro desde el chatbot.
+
+Pagina de terminos:
+
+```text
+http://127.0.0.1:8000/terminos/
+```
 
 ## Comandos Útiles
 

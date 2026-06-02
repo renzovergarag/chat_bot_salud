@@ -12,7 +12,11 @@ CREATE TABLE IF NOT EXISTS solicitudes_solicitud (
   telefono VARCHAR(12) NOT NULL,
   centro_salud VARCHAR(3) NOT NULL,
   credendencial_cuidador_discapacidad BOOLEAN NOT NULL DEFAULT FALSE,
+  credencial_cuidador_discapacidad_foto LONGTEXT NOT NULL,
   Neurodivergente_prais_gestante BOOLEAN NOT NULL DEFAULT FALSE,
+  Neurodivergente_prais_gestante_tipo VARCHAR(32) NOT NULL DEFAULT '',
+  Neurodivergente_prais_gestante_otro VARCHAR(50) NOT NULL DEFAULT '',
+  acepta_terminos BOOLEAN NOT NULL DEFAULT FALSE,
   motivo VARCHAR(160) NOT NULL,
   detalle_motivo LONGTEXT NOT NULL,
   fecha_solicitud DATE NOT NULL,
@@ -35,7 +39,17 @@ CREATE TABLE IF NOT EXISTS solicitudes_solicitud (
     )),
 
   CONSTRAINT chk_solicitud_prioridad
-    CHECK (priorizacion_solicitud IN ('URGENTE', 'ALTA', 'MEDIA', 'BAJA'))
+    CHECK (priorizacion_solicitud IN ('URGENTE', 'ALTA', 'MEDIA', 'BAJA')),
+
+  CONSTRAINT chk_solicitud_tipo_condicion
+    CHECK (Neurodivergente_prais_gestante_tipo IN (
+      '',
+      'NEURODIVERGENTE',
+      'CUIDADOR_NEURODIVERGENTE',
+      'PRAIS',
+      'GESTANTE',
+      'OTRO'
+    ))
 );
 
 CREATE INDEX idx_solicitud_rut

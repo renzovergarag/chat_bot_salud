@@ -25,6 +25,10 @@ def saludbot(request):
     )
 
 
+def terminos(request):
+    return render(request, "chat/terminos.html")
+
+
 def _json_body(request):
     try:
         return json.loads(request.body.decode("utf-8"))
@@ -53,6 +57,10 @@ def _normalizar_payload(payload):
     data.setdefault("sexo", "N")
     data.setdefault("credendencial_cuidador_discapacidad", False)
     data.setdefault("Neurodivergente_prais_gestante", False)
+    data.setdefault("credencial_cuidador_discapacidad_foto", "")
+    data.setdefault("Neurodivergente_prais_gestante_tipo", "")
+    data.setdefault("Neurodivergente_prais_gestante_otro", "")
+    data.setdefault("acepta_terminos", False)
 
     data.pop("nombre", None)
 
@@ -72,6 +80,15 @@ def crear_solicitud(request):
         payload["Neurodivergente_prais_gestante"] = _bool_from_payload(
             payload.get("Neurodivergente_prais_gestante")
         )
+        payload["acepta_terminos"] = _bool_from_payload(payload.get("acepta_terminos"))
+
+        if not payload["credendencial_cuidador_discapacidad"]:
+            payload["credencial_cuidador_discapacidad_foto"] = ""
+
+        if not payload["Neurodivergente_prais_gestante"]:
+            payload["Neurodivergente_prais_gestante_tipo"] = ""
+            payload["Neurodivergente_prais_gestante_otro"] = ""
+
         prioridad = calcular_prioridad(payload)
         payload["priorizacion_solicitud"] = prioridad["clasificacion"]
         payload["puntaje_prioridad"] = prioridad["puntaje"]
