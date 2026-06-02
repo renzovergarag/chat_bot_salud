@@ -9,9 +9,15 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-only")
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+
+default_allowed_hosts = "127.0.0.1,localhost,chat-bot-salud.onrender.com"
+render_external_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if render_external_hostname:
+    default_allowed_hosts = f"{default_allowed_hosts},{render_external_hostname}"
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("ALLOWED_HOSTS","chat-bot-salud.onrender.com" ,"127.0.0.1,localhost").split(",")
+    for host in os.getenv("ALLOWED_HOSTS", default_allowed_hosts).split(",")
     if host.strip()
 ]
 
