@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 
 
 RUT_PATTERN = re.compile(r"^(\d{1,2}\.\d{3}\.\d{3}|\d{7,8})-[\dkK]$")
-PHONE_PATTERN = re.compile(r"^\+569\d{8}$")
+PHONE_PATTERN = re.compile(r"^(\+56)?9\d{8}$")
 
 
 def normalizar_rut(rut):
@@ -14,6 +14,13 @@ def normalizar_rut(rut):
 def formatear_rut_sin_puntos(rut):
     normalized = normalizar_rut(rut)
     return f"{normalized[:-1]}-{normalized[-1]}"
+
+
+def formatear_telefono_con_codigo_pais(telefono):
+    normalized = telefono.strip().replace(" ", "").replace("-", "")
+    if normalized.startswith("+56"):
+        return normalized
+    return f"+56{normalized}"
 
 
 def validar_rut_chileno(rut):
@@ -42,4 +49,4 @@ def validar_rut_chileno(rut):
 
 def validar_telefono_chileno(telefono):
     if not telefono or not PHONE_PATTERN.match(telefono.strip()):
-        raise ValidationError("El telefono debe tener formato +56912345678.")
+        raise ValidationError("El telefono debe tener formato 912345678 o +56912345678.")

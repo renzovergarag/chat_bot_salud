@@ -53,11 +53,11 @@
     },
     {
       field: "rut",
-      prompt: "Indicame tu RUT. Ejemplo: 12.345.678-9.",
+      prompt: "Indicame tu RUT sin puntos y con guion. Ejemplo: 12345678-9.",
       validate(value) {
         return isValidRut(value)
           ? null
-          : "El RUT ingresado no es valido. Usa el formato 12.345.678-9.";
+          : "El RUT ingresado no es valido. Usa el formato 12345678-9.";
       },
       transform: normalizeRutForStorage,
     },
@@ -87,12 +87,13 @@
     },
     {
       field: "telefono",
-      prompt: "Indicame un telefono de contacto. Ejemplo: +56912345678.",
+      prompt: "Indicame un telefono de contacto sin +56. Ejemplo: 949106239.",
       validate(value) {
-        return /^\+569\d{8}$/.test(value.trim())
+        return /^9\d{8}$/.test(value.trim())
           ? null
-          : "Ingresa un telefono valido con formato +56912345678.";
+          : "Ingresa un telefono valido con formato 949106239.";
       },
+      transform: normalizePhoneForStorage,
     },
     {
       field: "centro_salud",
@@ -580,9 +581,9 @@
 
   function isValidRut(value) {
     const rut = value.trim();
-    if (!/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/.test(rut)) return false;
+    if (!/^\d{7,8}-[\dkK]$/.test(rut)) return false;
 
-    const clean = rut.replace(/\./g, "").replace("-", "").toUpperCase();
+    const clean = rut.replace("-", "").toUpperCase();
     const body = clean.slice(0, -1);
     const checkDigit = clean.slice(-1);
     const factors = [2, 3, 4, 5, 6, 7];
@@ -598,8 +599,12 @@
   }
 
   function normalizeRutForStorage(value) {
-    const clean = value.replace(/\./g, "").replace("-", "").toUpperCase();
+    const clean = value.replace("-", "").toUpperCase();
     return `${clean.slice(0, -1)}-${clean.slice(-1)}`;
+  }
+
+  function normalizePhoneForStorage(value) {
+    return `+56${value.trim()}`;
   }
 
   function formatErrors(errors) {

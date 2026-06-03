@@ -3,7 +3,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from .validators import formatear_rut_sin_puntos, validar_rut_chileno, validar_telefono_chileno
+from .validators import (
+    formatear_rut_sin_puntos,
+    formatear_telefono_con_codigo_pais,
+    validar_rut_chileno,
+    validar_telefono_chileno,
+)
 
 
 class Solicitud(models.Model):
@@ -76,6 +81,9 @@ class Solicitud(models.Model):
         super().clean()
         if self.rut:
             self.rut = formatear_rut_sin_puntos(self.rut)
+
+        if self.telefono:
+            self.telefono = formatear_telefono_con_codigo_pais(self.telefono)
 
         if not self.acepta_terminos:
             raise ValidationError({"acepta_terminos": "Debes aceptar los terminos y condiciones."})

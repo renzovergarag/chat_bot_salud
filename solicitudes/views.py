@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from .models import Solicitud
 from .priorizacion import calcular_prioridad
-from .validators import formatear_rut_sin_puntos
+from .validators import formatear_rut_sin_puntos, formatear_telefono_con_codigo_pais
 
 
 def chatbot(request):
@@ -66,6 +66,9 @@ def _normalizar_payload(payload):
 
     if data.get("rut"):
         data["rut"] = formatear_rut_sin_puntos(data["rut"])
+
+    if data.get("telefono"):
+        data["telefono"] = formatear_telefono_con_codigo_pais(data["telefono"])
 
     return data
 
