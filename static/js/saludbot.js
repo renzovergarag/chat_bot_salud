@@ -43,7 +43,7 @@
   const steps = [
     {
       field: "motivo",
-      prompt: "Cuentame el motivo principal de tu consulta de morbilidad.",
+      prompt: "¿Por qué problema de salud necesitas consultar hoy?",
       validate: minLength("Describe el motivo de consulta con al menos 3 caracteres.", 3),
     },
     {
@@ -317,7 +317,14 @@
   }
 
   function quickActions() {
-    const actions = ["Tengo fiebre", "Dolor o malestar", "Sintomas respiratorios", "Control o medicamento", "Otra consulta"];
+    const actions = [
+      "Tengo Fiebre",
+      "Dolor o malestar",
+      "Problemas Respiratorios",
+      "Vómitos o diarrea",
+      "Problemas al orinar",
+      "Otros motivos",
+    ];
     return `
       <div class="quick-actions" aria-label="Opciones rapidas">
         ${actions.map((label) => `<button class="quick-action" type="button" data-value="${escapeAttr(label)}">${escapeHtml(label)}</button>`).join("")}
@@ -361,10 +368,45 @@
     `;
   }
 
+  function renderUrgencyWarning() {
+    return `
+      <div class="urgency-card" role="alert">
+        <strong>Antes de continuar, si presentas alguna de estas situaciones:</strong>
+        <ul>
+          <li>Dolor de pecho intenso</li>
+          <li>Dificultad importante para respirar</li>
+          <li>Pérdida de conciencia</li>
+          <li>Convulsiones</li>
+          <li>Sangrado abundante</li>
+          <li>Debilidad repentina de un brazo o una pierna</li>
+        </ul>
+        <p>Tu situación podría requerir atención inmediata. Te recomendamos acudir a SAPU o Servicio de Urgencia del Hospital; si no puedes acudir por tus propios medios, solicita una ambulancia al número 131.</p>
+        <div class="summary-actions urgency-actions">
+          <button class="summary-action urgency-action urgency-action--continue" type="button" data-urgency-action="continue">Continuar</button>
+          <button class="summary-action urgency-action urgency-action--stop" type="button" data-urgency-action="stop">Terminar solicitud</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function showUrgencyWarning() {
+    state.waiting = true;
+    input.disabled = true;
+    submitButton.disabled = true;
+
+    const row = addMessage('<span class="typing">SaludBot esta escribiendo...</span>', "bot", { html: true });
+    window.setTimeout(() => {
+      row.remove();
+      state.waiting = false;
+      addMessage(renderUrgencyWarning(), "bot", { html: true });
+      scrollToLatest();
+    }, 520);
+  }
+
   function start() {
     const greetingName = userName ? `, ${escapeHtml(userName)}` : "";
     addMessage(
-      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudare a seleccionar el motivo de morbilidad y recopilar la informacion necesaria para tu atencion.${quickActions()}`,
+      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudaré a solicitar una atención de salud médica y a recopilar información necesaria para que el equipo revise tu caso. ¿Por qué problema de salud necesitas consultar hoy?${quickActions()}`,
       "bot",
       { html: true }
     );
@@ -525,7 +567,7 @@
   }
 
   function disableSiblingActions(button) {
-    const container = button.closest(".summary-actions, .attachment-actions, .terms-box");
+    const container = button.closest(".quick-actions, .summary-actions, .attachment-actions, .terms-box");
     if (!container) return;
 
     container.querySelectorAll("button").forEach((actionButton) => {
@@ -553,6 +595,12 @@
       state.selectedCentroName = displayValue;
     }
     state.index += 1;
+
+    if (step.field === "motivo") {
+      showUrgencyWarning();
+      return;
+    }
+
     askCurrentStep();
   }
 
@@ -656,9 +704,21 @@
     const postButton = event.target.closest("[data-post-action]");
     const photoButton = event.target.closest("[data-photo-action]");
     const termsButton = event.target.closest("[data-terms-action]");
+    const urgencyButton = event.target.closest("[data-urgency-action]");
 
     if (quickButton && !state.waiting && !state.complete) {
+      disableSiblingActions(quickButton);
       submitValue(quickButton.dataset.value);
+      return;
+    }
+
+    if (urgencyButton && !urgencyButton.disabled) {
+      disableSiblingActions(urgencyButton);
+      if (urgencyButton.dataset.urgencyAction === "continue") {
+        askCurrentStep();
+      } else {
+        closeConversation();
+      }
       return;
     }
 

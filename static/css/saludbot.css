@@ -281,6 +281,65 @@ input {
   font-size: 0.92rem;
 }
 
+.urgency-card {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 620px);
+  padding: 16px;
+  border: 1px solid #F97316;
+  border-left: 6px solid var(--error);
+  border-radius: 8px;
+  background: #FFF7ED;
+  color: #7C2D12;
+}
+
+.urgency-card strong {
+  color: #9A3412;
+}
+
+.urgency-card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.urgency-card li {
+  margin: 5px 0;
+}
+
+.urgency-card p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.urgency-actions {
+  margin-top: 2px;
+}
+
+.urgency-action--continue {
+  border-color: #15803D;
+  background: #DCFCE7;
+  color: #166534;
+}
+
+.urgency-action--stop {
+  border-color: #B91C1C;
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
+.urgency-action--continue:hover,
+.urgency-action--continue:focus {
+  border-color: #166534;
+  outline-color: rgba(22, 101, 52, 0.22);
+}
+
+.urgency-action--stop:hover,
+.urgency-action--stop:focus {
+  border-color: #7F1D1D;
+  background: #B91C1C;
+  outline-color: rgba(185, 28, 28, 0.22);
+}
+
 .terms-box {
   margin-top: 14px;
   display: grid;
