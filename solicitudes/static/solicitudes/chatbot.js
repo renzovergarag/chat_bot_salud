@@ -11,7 +11,7 @@ const state = {
 const steps = [
   {
     field: "motivo",
-    prompt: "Hola. Soy tu asistente virtual del CESFAM Rodelillo. Describe tu consulta o el motivo de tu visita.",
+    prompt: "Hola. Soy tu asistente virtual del . Describe tu consulta o el motivo de tu visita.",
     validate: requiredText("Indica brevemente el motivo de tu consulta."),
   },
   {

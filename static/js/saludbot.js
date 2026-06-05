@@ -320,7 +320,7 @@
     const actions = [
       "Tengo Fiebre",
       "Dolor o malestar",
-      "Problemas Respiratorios",
+      "Problemas respiratorios",
       "Vómitos o diarrea",
       "Problemas al orinar",
       "Otros motivos",
@@ -406,7 +406,7 @@
   function start() {
     const greetingName = userName ? `, ${escapeHtml(userName)}` : "";
     addMessage(
-      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudaré a solicitar una atención de salud médica y a recopilar información necesaria para que el equipo revise tu caso. ¿Por qué problema de salud necesitas consultar hoy?${quickActions()}`,
+      `Hola 👋 Soy SaludBot${greetingName}, asistente virtual de salud familiar. Te ayudaré a solicitar una atención de salud médica y a recopilar información necesaria para que el equipo revise tu caso. ¿Qué problema de salud necesitas consultar hoy?${quickActions()}`,
       "bot",
       { html: true }
     );
