@@ -48,12 +48,16 @@
     },
     {
       field: "detalle_sintomas",
-      prompt: "Gracias. Ahora describe tus sintomas, desde cuando comenzaron y si han cambiado.",
+      prompt: `Gracias. Para ayudarte mejor, cuéntanos un poco más:
+* ¿Qué síntomas tienes?
+* ¿Cuándo comenzaron?
+* ¿Han empeorado, mejorado o siguen igual?
+* ¿Has recibido atención médica por este problema?`,
       validate: minLength("Describe tus sintomas con al menos 20 caracteres para orientar mejor la atencion.", 20),
     },
     {
       field: "rut",
-      prompt: "Indicame tu RUT sin puntos y con guion. Ejemplo: 12345678-9.",
+      prompt: "Para continuar, indícame el **RUT de la persona que requiere la atención**.\n**Ejemplo:** 12345678-9",
       validate(value) {
         return isValidRut(value)
           ? null
@@ -63,7 +67,7 @@
     },
     {
       field: "nombre",
-      prompt: "Perfecto. Indicame tu nombre completo.",
+      prompt: "Perfecto. Ahora indícame el nombre completo de la persona que necesita la atención.",
       validate: validateFullName,
       skip() {
         return Boolean(userName);
@@ -87,7 +91,7 @@
     },
     {
       field: "telefono",
-      prompt: "Indicame un telefono de contacto sin +56. Ejemplo: 949106239.",
+      prompt: "Por favor, indícame un número de teléfono de contacto para poder comunicarnos contigo.\nEjemplo: 919701239\n\nEjemplo: 949106239",
       validate(value) {
         return /^9\d{8}$/.test(value.trim())
           ? null
@@ -310,10 +314,12 @@
 
     let prompt = step.prompt;
     if (step.options) {
-      prompt += renderOptionButtons(step.options);
+      prompt = `${formatPromptText(prompt)}${renderOptionButtons(step.options)}`;
+    } else {
+      prompt = formatPromptText(prompt);
     }
 
-    showTyping(() => addMessage(prompt, "bot", { html: Boolean(step.options) }));
+    showTyping(() => addMessage(prompt, "bot", { html: true }));
   }
 
   function quickActions() {
@@ -653,6 +659,12 @@
 
   function normalizePhoneForStorage(value) {
     return `+56${value.trim()}`;
+  }
+
+  function formatPromptText(value) {
+    return escapeHtml(value)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
   }
 
   function formatErrors(errors) {
