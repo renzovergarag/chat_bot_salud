@@ -91,7 +91,7 @@
     },
     {
       field: "telefono",
-      prompt: "Por favor, indícame un número de teléfono de contacto para poder comunicarnos contigo.\nEjemplo: 919701239\n\nEjemplo: 949106239",
+      prompt: "Por favor, indícame un número de teléfono de contacto para poder comunicarnos contigo.\nEjemplo: 919701239",
       validate(value) {
         return /^9\d{8}$/.test(value.trim())
           ? null
