@@ -1,0 +1,73 @@
+name: Deploy a produccion
+
+# Se ejecuta en el runner self-hosted del server al integrar en main.
+# El .env de produccion se genera aqui, en cada corrida, desde los secrets.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita dos deploys simultaneos pisandose.
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, produccion]
+    env:
+      APP_DIR: /var/www/chat_bot_salud/app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sincronizar codigo a APP_DIR
+        run: |
+          mkdir -p "$APP_DIR"
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.venv' \
+            --exclude '.env' \
+            --exclude 'staticfiles' \
+            --exclude '.claude' \
+            --exclude '.agents' \
+            ./ "$APP_DIR/"
+
+      - name: Crear/actualizar entorno virtual
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          test -d .venv || python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Generar .env desde secrets
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          umask 077
+          cat > .env <<EOF
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEBUG=False
+          ALLOWED_HOSTS=morbilidad.cmvalparaiso.cl,127.0.0.1,localhost
+          DB_ENGINE=mysql
+          DB_NAME=chat_bot_salud
+          DB_USER=saludbot
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          EOF
+
+      - name: Migraciones
+        working-directory: ${{ env.APP_DIR }}
+        run: .venv/bin/python manage.py migrate --noinput
+
+      - name: Archivos estaticos
+        working-directory: ${{ env.APP_DIR }}
+        run: .venv/bin/python manage.py collectstatic --noinput
+
+      - name: Recargar app con pm2
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          pm2 startOrReload ecosystem.config.js --update-env
+          pm2 save
