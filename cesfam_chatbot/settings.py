@@ -21,6 +21,19 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# Origenes de confianza para CSRF (esquema + host), necesario con DEBUG=False
+# detras de un dominio HTTPS. Ej: https://morbilidad.cmvalparaiso.cl
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+# Detras de nginx que termina TLS: confiar en X-Forwarded-Proto para que
+# Django reconozca la request como segura (HTTPS). Se activa solo en produccion.
+if os.getenv("USE_PROXY_SSL_HEADER", "False").lower() == "true":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
