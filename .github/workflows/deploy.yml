@@ -44,20 +44,18 @@ jobs:
 
       - name: Generar .env desde secrets
         working-directory: ${{ env.APP_DIR }}
+        env:
+          # Secret unico con el bloque de produccion (DB_* y SECRET_KEY).
+          ENV_PROD: ${{ secrets.ENV_PROD }}
         run: |
           umask 077
-          cat > .env <<EOF
-          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          printf '%s\n' "$ENV_PROD" > .env
+          # Flags de produccion no sensibles (versionados aqui, no en el secret).
+          cat >> .env <<'EOF'
           DEBUG=False
           ALLOWED_HOSTS=morbilidad.cmvalparaiso.cl,127.0.0.1,localhost
           CSRF_TRUSTED_ORIGINS=https://morbilidad.cmvalparaiso.cl
           USE_PROXY_SSL_HEADER=True
-          DB_ENGINE=mysql
-          DB_NAME=chat_bot_salud
-          DB_USER=saludbot
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_HOST=127.0.0.1
-          DB_PORT=3306
           EOF
 
       - name: Migraciones
