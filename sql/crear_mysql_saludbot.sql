@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS cesfam_chatbot
+CREATE DATABASE IF NOT EXISTS chat_bot_salud
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE cesfam_chatbot;
+USE chat_bot_salud;
 
 CREATE TABLE IF NOT EXISTS solicitudes_solicitud (
   id_solicitud BIGINT NOT NULL AUTO_INCREMENT,

@@ -40,7 +40,7 @@ Configura `.env` con tus credenciales MySQL:
 
 ```env
 DB_ENGINE=mysql
-DB_NAME=cesfam_chatbot
+DB_NAME=chat_bot_salud
 DB_USER=root
 DB_PASSWORD=tu_password
 DB_HOST=127.0.0.1
@@ -150,7 +150,7 @@ Consultar en Workbench:
 
 ```sql
 SELECT *
-FROM cesfam_chatbot.solicitudes_solicitud
+FROM chat_bot_salud.solicitudes_solicitud
 ORDER BY id_solicitud DESC;
 ```
 
