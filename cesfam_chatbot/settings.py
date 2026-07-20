@@ -21,6 +21,11 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# Host del modulo interno de gestion. En produccion: gestion.cmvalparaiso.cl
+GESTION_HOST = os.getenv("GESTION_HOST", "gestion.localhost")
+if GESTION_HOST and GESTION_HOST not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(GESTION_HOST)
+
 # Origenes de confianza para CSRF (esquema + host), necesario con DEBUG=False
 # detras de un dominio HTTPS. Ej: https://morbilidad.cmvalparaiso.cl
 CSRF_TRUSTED_ORIGINS = [
@@ -47,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "cesfam_chatbot.middleware.HostBasedUrlconfMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

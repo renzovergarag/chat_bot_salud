@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.test.client import RequestFactory
+from django.test import override_settings
 
 from gestion.views import panel
 
@@ -14,3 +15,20 @@ class PanelPlaceholderTests(TestCase):
         request = RequestFactory().get("/")
         response = panel(request)
         self.assertIn("construcción", response.content.decode("utf-8"))
+
+
+@override_settings(ALLOWED_HOSTS=["gestion.localhost", "testserver"], GESTION_HOST="gestion.localhost")
+class HostRoutingTests(TestCase):
+    def test_subdominio_gestion_resuelve_placeholder(self):
+        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("construcción", response.content.decode("utf-8"))
+
+    def test_host_default_resuelve_chatbot(self):
+        response = self.client.get("/", HTTP_HOST="testserver")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("construcción", response.content.decode("utf-8"))
+
+    def test_url_del_chatbot_no_existe_en_subdominio_gestion(self):
+        response = self.client.get("/terminos/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 404)
