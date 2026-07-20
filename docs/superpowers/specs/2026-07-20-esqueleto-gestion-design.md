@@ -111,7 +111,7 @@ producción `gestion.cmvalparaiso.cl`).
   - `HTTP_HOST = gestion.localhost` → la vista placeholder responde 200.
   - `HTTP_HOST` default (chatbot) → el home del chatbot responde 200.
   - Una URL del chatbot **no** resuelve en el host de gestión (404).
-  - Una URL de gestión **no** resuelve en el host default (404).
+  - El host default resuelve al chatbot, no a gestion (assertNotIn "construcción").
 - La suite existente (9 tests del chatbot) sigue verde.
 
 ## Notas de despliegue (fuera de alcance, para etapa de deploy)

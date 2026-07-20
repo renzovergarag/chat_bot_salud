@@ -9,7 +9,7 @@ class HostBasedUrlconfMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        host = request.get_host().split(":")[0]
-        if host == settings.GESTION_HOST:
+        host = request.get_host().split(":")[0].lower()
+        if host == settings.GESTION_HOST.lower():
             request.urlconf = "cesfam_chatbot.urls_gestion"
         return self.get_response(request)
