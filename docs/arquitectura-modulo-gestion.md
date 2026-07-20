@@ -1,0 +1,119 @@
+# Arquitectura: módulo de gestión y validación de solicitudes
+
+## Contexto
+
+El chatbot (`morbilidad.cmvalparaiso.cl`) es solo una parte del sistema. Las
+solicitudes que crea deben ser **validadas y gestionadas por los equipos de
+cada centro de salud**. Se necesita un módulo para revisarlas y gestionarlas,
+más control de horario de disponibilidad del chatbot.
+
+Estado actual del proyecto:
+
+- Un solo proyecto Django (`cesfam_chatbot`) con una sola app (`solicitudes`).
+- MySQL en producción detrás de nginx + HTTPS, deploy con runner self-hosted
+  + pm2.
+- `django.contrib.auth` y `django.contrib.admin` ya activos.
+- Se llega al chatbot por `morbilidad.cmvalparaiso.cl`.
+
+## Decisión: un único proyecto, no dos
+
+**Se implementa el módulo de gestión como una app nueva (`gestion`) dentro del
+mismo proyecto**, no como un proyecto separado que comparta la base de datos.
+
+### Por qué no dos proyectos con BD compartida
+
+El patrón "dos codebases apuntando a las mismas tablas" (shared-database
+integration) es un anti-patrón que solo se justifica con **equipos
+independientes, cadencias de release distintas o stacks diferentes**. Ninguno
+aplica: mismo autor, mismo Django, proyecto chico.
+
+| Criterio | Un proyecto (app nueva) | Dos proyectos, misma BD |
+| --- | --- | --- |
+| Dueño del esquema / migraciones | Uno solo, sin ambigüedad | Dos historiales sobre las mismas tablas → conflictos, o `managed=False` + modelos duplicados que se desincronizan |
+| Relación `Solicitud` ↔ gestión | FK real, integridad garantizada | Referencias frágiles entre codebases |
+| Fuente de verdad del modelo | Única | Duplicada, con drift asegurado |
+| Deploy | Uno (runner + pm2 + nginx ya existentes) | Dos deploys, dos configs |
+
+### Separación público/interno
+
+La preocupación válida ("el chatbot es público, la gestión es interna") se
+resuelve por **app + auth + routing**, no por proyecto + BD separada:
+
+- App `solicitudes` (existente): dueña de `Solicitud`, solo la crea el chatbot.
+- App `gestion` (nueva): dueña del ciclo de vida de validación; lee
+  `Solicitud` y escribe su propio modelo.
+- Endpoints de gestión detrás de `@login_required` + filtrado por centro.
+
+## Decisiones tomadas
+
+- **Acceso:** subdominio propio `gestion.cmvalparaiso.cl`, mismo deploy /
+  mismo WSGI; nginx enruta ambos hosts y se agrega a `ALLOWED_HOSTS` +
+  `CSRF_TRUSTED_ORIGINS`.
+- **Usuarios:** multi-centro. Un usuario puede gestionar uno o varios centros
+  (relación M2M usuario ↔ centros), pensado para perfiles de coordinación.
+- **Alcance:** MVP funcional primero (Etapa 1, Etapa 2 y ventana horaria),
+  iterar después.
+
+## Diseño de las piezas
+
+### Modelo de gestión
+
+`Gestion` en la app nueva, con `OneToOne → Solicitud` (mantiene el modelo del
+chatbot limpio del flujo administrativo, pero con FK real por compartir BD en
+un mismo proyecto):
+
+- Etapa 1: estado de hora (`PENDIENTE` / `CON_HORA` / `SIN_HORA`),
+  `revisado_por` (FK User), `fecha_revision`.
+- Etapa 2: `contactado` (bool), `fecha_contacto`, `contactado_por` (FK User),
+  `resultado_contacto`.
+
+Asignación usuario ↔ centros: relación **M2M** (modelo perfil o tabla puente).
+El queryset de gestión se filtra por los centros del usuario; superusuario ve
+todo.
+
+### Etapa 1 — cola de revisión
+
+Vista custom tipo *worklist* (no el admin de Django, que no calza con el flujo
+de cupo limitado):
+
+- Lista ordenada por `puntaje_prioridad` descendente, filtrada por centro.
+- Acción por solicitud: asignar / denegar hora.
+- El cupo (ej. 30 de 50) es **informativo** ("X asignadas / N cupos"), porque
+  el orden no garantiza que del 1 al N todos reciban hora: la decisión es
+  manual caso a caso. Formalizar cupos queda fuera del MVP.
+
+### Etapa 2 — WhatsApp por deep-link
+
+Sin integración con WhatsApp. El backend arma el enlace
+`https://wa.me/<telefono>?text=<mensaje urlencoded>`. El teléfono ya se guarda
+con código de país (`formatear_telefono_con_codigo_pais`). Plantilla de
+mensaje por caso (con hora / sin hora). Al usar el enlace, se marca
+`contactado`. Plantillas editables por config queda como iteración posterior.
+
+### Ventana horaria del chatbot (L-V 08:00–08:20)
+
+Config en BD, no hardcodeada: modelo singleton `ConfiguracionChatbot`
+(`activo`, días, `hora_inicio`, `hora_fin`, `mensaje_fuera_horario`).
+
+**Se valida en el backend, no solo en el JS.** Hoy `crear_solicitud`
+(`solicitudes/views.py:77`) aceptaría un POST a cualquier hora; hay que
+rechazar fuera de ventana ahí, usando `America/Santiago` (ya configurado en
+`TIME_ZONE`). El frontend muestra el mensaje amable; el backend hace cumplir
+la regla.
+
+## Impacto en configuración
+
+- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS`: agregar `gestion.cmvalparaiso.cl`.
+- nginx: nuevo server_name apuntando al mismo WSGI.
+- `INSTALLED_APPS`: agregar `gestion`.
+
+## Estado
+
+Decisión de arquitectura **aprobada, sin implementar**. Próximo paso: plan de
+implementación por fases del MVP.
+
+## Referencias
+
+- `solicitudes/models.py` — modelo `Solicitud`.
+- `solicitudes/views.py:77` — `crear_solicitud` (punto donde validar horario).
+- `cesfam_chatbot/settings.py:18-30` — `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`.
