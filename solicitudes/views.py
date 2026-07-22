@@ -62,13 +62,19 @@ def _normalizar_payload(payload):
     data.setdefault("Neurodivergente_prais_gestante_otro", "")
     data.setdefault("acepta_terminos", False)
 
-    data.pop("nombre", None)
+    if "nombre" in data and "nombre_completo" not in data:
+        data["nombre_completo"] = data.pop("nombre")
+    else:
+        data.pop("nombre", None)
 
     if data.get("rut"):
         data["rut"] = formatear_rut_sin_puntos(data["rut"])
 
     if data.get("telefono"):
         data["telefono"] = formatear_telefono_con_codigo_pais(data["telefono"])
+
+    if "centro_salud" in data:
+        data["centro_salud_id"] = data.pop("centro_salud")
 
     return data
 
@@ -112,10 +118,11 @@ def crear_solicitud(request):
             "puntaje_prioridad": solicitud.puntaje_prioridad,
             "resumen": {
                 "rut": solicitud.rut,
+                "nombre_completo": solicitud.nombre_completo,
                 "edad": solicitud.edad,
                 "telefono": solicitud.telefono,
-                "centro_salud": solicitud.centro_salud,
-                "centro_salud_nombre": solicitud.get_centro_salud_display(),
+                "centro_salud": solicitud.centro_salud_id,
+                "centro_salud_nombre": solicitud.centro_salud.centro,
                 "motivo": solicitud.motivo,
                 "detalle_motivo": solicitud.detalle_motivo,
             },

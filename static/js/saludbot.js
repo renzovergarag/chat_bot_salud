@@ -16,6 +16,8 @@
     { id: "620", nombre: "Centro De Salud Familiar Rodelillo" },
     { id: "621", nombre: "Centro De Salud Familiar Padre Damian Molokai" },
     { id: "625", nombre: "Centro De Salud Familiar Quebrada Verde" },
+    { id: "626", nombre: "Centro Comunitario De Salud Familiar Porvenir Bajo" },
+    { id: "627", nombre: "Centro Comunitario De Salud Familiar Juan Pablo II" },
     { id: "630", nombre: "Centro De Salud Familiar Las Canas" },
     { id: "635", nombre: "Centro De Salud Familiar Mena" },
     { id: "640", nombre: "Centro De Salud Familiar Puertas Negras" },
