@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Solicitud
+from .models import Centro, Solicitud
+
+
+@admin.register(Centro)
+class CentroAdmin(admin.ModelAdmin):
+    list_display = ("id_centro", "centro")
+    search_fields = ("centro",)
 
 
 @admin.register(Solicitud)
