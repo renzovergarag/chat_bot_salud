@@ -11,6 +11,20 @@ from .validators import (
 )
 
 
+class Centro(models.Model):
+    id_centro = models.IntegerField(primary_key=True)
+    centro = models.CharField(max_length=150, unique=True)
+
+    class Meta:
+        db_table = "centros"
+        ordering = ["id_centro"]
+        verbose_name = "centro"
+        verbose_name_plural = "centros"
+
+    def __str__(self):
+        return self.centro
+
+
 class Solicitud(models.Model):
     class Sexo(models.TextChoices):
         FEMENINO = "F", "Femenino"
@@ -24,21 +38,6 @@ class Solicitud(models.Model):
         MEDIA = "MEDIA", "Media"
         BAJA = "BAJA", "Baja"
 
-    class CentroSalud(models.TextChoices):
-        LAGUNA_VERDE = "600", "Centro De Salud Familiar Laguna Verde"
-        PLACILLA = "605", "Centro De Salud Familiar Placilla (Valparaiso)"
-        PLACERES = "610", "Centro De Salud Familiar Placeres"
-        BARON = "615", "Centro De Salud Familiar Baron"
-        RODELILLO = "620", "Centro De Salud Familiar Rodelillo"
-        PADRE_DAMIAN = "621", "Centro De Salud Familiar Padre Damian Molokai"
-        QUEBRADA_VERDE = "625", "Centro De Salud Familiar Quebrada Verde"
-        LAS_CANAS = "630", "Centro De Salud Familiar Las Canas"
-        MENA = "635", "Centro De Salud Familiar Mena"
-        PUERTAS_NEGRAS = "640", "Centro De Salud Familiar Puertas Negras"
-        CORDILLERA = "645", "Centro De Salud Familiar Cordillera"
-        ESPERANZA = "650", "Centro De Salud Familiar Esperanza"
-        REINA_ISABEL = "655", "Centro De Salud Familiar Reina Isabel II"
-
     class TipoCondicion(models.TextChoices):
         NEURODIVERGENTE = "NEURODIVERGENTE", "Neurodivergente"
         CUIDADOR_NEURODIVERGENTE = "CUIDADOR_NEURODIVERGENTE", "Cuidador neurodivergente"
@@ -51,7 +50,12 @@ class Solicitud(models.Model):
     edad = models.PositiveSmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(120)])
     sexo = models.CharField(max_length=1, choices=Sexo.choices)
     telefono = models.CharField(max_length=12, validators=[validar_telefono_chileno])
-    centro_salud = models.CharField(max_length=3, choices=CentroSalud.choices)
+    centro_salud = models.ForeignKey(
+        Centro,
+        db_column="id_centro",
+        on_delete=models.RESTRICT,
+        related_name="solicitudes",
+    )
     credendencial_cuidador_discapacidad = models.BooleanField(default=False)
     credencial_cuidador_discapacidad_foto = models.TextField(blank=True)
     Neurodivergente_prais_gestante = models.BooleanField(default=False)

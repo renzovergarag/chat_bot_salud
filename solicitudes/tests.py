@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Solicitud
+from .models import Centro, Solicitud
 from .priorizacion import calcular_prioridad
 from .validators import formatear_telefono_con_codigo_pais, validar_rut_chileno, validar_telefono_chileno
 
@@ -26,6 +26,7 @@ class SolicitudTests(TestCase):
 
     def test_creacion_solicitud_valida(self):
         payload = self.valid_payload()
+        payload["centro_salud_id"] = payload.pop("centro_salud")
         prioridad = calcular_prioridad(payload)
         payload["priorizacion_solicitud"] = prioridad["clasificacion"]
         payload["puntaje_prioridad"] = prioridad["puntaje"]
@@ -38,8 +39,13 @@ class SolicitudTests(TestCase):
         self.assertEqual(solicitud.puntaje_prioridad, 0)
         self.assertEqual(solicitud.rut, "25747311-2")
         self.assertEqual(solicitud.telefono, "+56949106239")
-        self.assertEqual(solicitud.centro_salud, "620")
+        self.assertEqual(solicitud.centro_salud_id, 620)
+        self.assertEqual(solicitud.centro_salud.centro, "Centro De Salud Familiar Rodelillo")
         self.assertTrue(solicitud.acepta_terminos)
+
+    def test_catalogo_centros_incluye_cesfam_y_cecosf(self):
+        self.assertEqual(Centro.objects.get(pk=626).centro, "Centro Comunitario De Salud Familiar Porvenir Bajo")
+        self.assertEqual(Centro.objects.get(pk=627).centro, "Centro Comunitario De Salud Familiar Juan Pablo II")
 
     def test_rechaza_rut_invalido(self):
         with self.assertRaises(ValidationError):
@@ -107,7 +113,8 @@ class SolicitudTests(TestCase):
         self.assertEqual(body["puntaje_prioridad"], 0)
         self.assertEqual(body["resumen"]["rut"], "25747311-2")
         self.assertEqual(body["resumen"]["telefono"], "+56949106239")
-        self.assertEqual(body["resumen"]["centro_salud"], "620")
+        self.assertEqual(body["resumen"]["centro_salud"], 620)
+        self.assertEqual(body["resumen"]["centro_salud_nombre"], "Centro De Salud Familiar Rodelillo")
 
     def test_endpoint_rechaza_sin_terminos(self):
         payload = self.valid_payload()
@@ -142,7 +149,7 @@ class SolicitudTests(TestCase):
         solicitud = Solicitud.objects.get()
         self.assertEqual(solicitud.rut, "25747311-2")
         self.assertEqual(solicitud.telefono, "+56949106239")
-        self.assertEqual(solicitud.centro_salud, "620")
+        self.assertEqual(solicitud.centro_salud_id, 620)
         self.assertEqual(solicitud.sexo, "N")
         self.assertEqual(solicitud.puntaje_prioridad, 1)
         self.assertEqual(solicitud.priorizacion_solicitud, "BAJA")
