@@ -38,6 +38,16 @@ CSRF_TRUSTED_ORIGINS = [
 # Django reconozca la request como segura (HTTPS). Se activa solo en produccion.
 if os.getenv("USE_PROXY_SSL_HEADER", "False").lower() == "true":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Misma condicion de produccion: exigir HTTPS para las cookies de sesion
+    # y CSRF. En local se sirve por HTTP y esto rompe el login, por eso no se
+    # activa incondicionalmente.
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Acota a 8 horas la ventana en que una sesion sigue viva despues de revocar
+# un acceso (desmarcar PerfilUsuario.activo o User.is_active): la sesion
+# ahora transporta acceso a datos de salud, no solo al admin.
+SESSION_COOKIE_AGE = 28800
 
 INSTALLED_APPS = [
     "django.contrib.admin",
