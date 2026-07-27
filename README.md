@@ -198,3 +198,31 @@ DB_PORT=3306
 ```
 
 `DB_HOST=127.0.0.1` solo funciona para MySQL local. En Render debe apuntar al host real de la base de datos.
+
+## Modulo de gestion: alta de usuarios
+
+El acceso a `gestion.cmvalparaiso.cl` es solo con cuenta de Google Workspace
+institucional, y ademas exige un perfil dado de alta. Un correo del dominio
+sin perfil **no entra**: no se crean cuentas al vuelo.
+
+Para dar de alta a alguien, desde el admin en el subdominio de gestion
+(`/admin/`, con una cuenta superusuario):
+
+1. Crear el `User` con el **correo institucional exacto** en el campo email.
+   La contrasena es irrelevante (el login es por Google); dejar una aleatoria.
+2. Crear su `Perfil de usuario` asignando rol, centro y, si corresponde,
+   centro satelite.
+
+Para revocar el acceso, desmarcar `activo` en el perfil. No borrar el usuario:
+se pierde el historial de acciones.
+
+### Configuracion de Google Cloud Console
+
+Se necesita un **OAuth 2.0 Client ID** tipo *Web application*. Redirect URIs
+autorizados:
+
+- Local: `http://gestion.localhost:8000/oidc/callback/`
+- Produccion: `https://gestion.cmvalparaiso.cl/oidc/callback/`
+
+El `client_id` y el `client_secret` van en `.env` (ver `.env.example`); en
+produccion, dentro del secret `ENV_PROD` del workflow de deploy.

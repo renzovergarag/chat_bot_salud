@@ -174,13 +174,11 @@ la regla.
 
 ## Estado
 
-Decisión de arquitectura **aprobada, sin implementar**. Próximo paso: plan de
-implementación por fases del MVP.
-
-Actualizado tras la definición de autenticación del equipo: login solo por
-Google, tabla de perfiles como lista de autorización, y los siete roles del
-sistema. Esa definición **reemplaza** la M2M usuario ↔ centros que figuraba
-antes en "Decisiones tomadas".
+Decisión de arquitectura **aprobada**. Autenticación y perfiles
+**implementados** (ver `docs/superpowers/plans/2026-07-27-login-google-perfiles.md` y
+`docs/superpowers/specs/2026-07-27-login-google-perfiles-design.md`).
+Pendientes: modelo `Gestion` con Etapas 1 y 2, vistas worklist, deep-link de
+WhatsApp y ventana horaria.
 
 ## Referencias
 
