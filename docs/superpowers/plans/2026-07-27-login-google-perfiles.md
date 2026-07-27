@@ -418,7 +418,7 @@ Expected: `System check identified no issues`.
 - [ ] **Step 6: Correr la suite completa (regresión)**
 
 Run: `DB_ENGINE=sqlite .venv/bin/python manage.py test`
-Expected: PASS — 27 tests.
+Expected: PASS — 22 tests (10 de `solicitudes` + 12 de `gestion`).
 
 - [ ] **Step 7: Documentar las variables en `.env.example`**
 
