@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.test.client import RequestFactory
@@ -9,15 +9,11 @@ from solicitudes.models import Centro
 
 
 class PanelPlaceholderTests(TestCase):
-    def test_panel_responde_200(self):
+    def test_panel_redirige_a_login_sin_sesion(self):
         request = RequestFactory().get("/")
+        request.user = AnonymousUser()
         response = panel(request)
-        self.assertEqual(response.status_code, 200)
-
-    def test_panel_muestra_texto_en_construccion(self):
-        request = RequestFactory().get("/")
-        response = panel(request)
-        self.assertIn("construcción", response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 302)
 
 
 class PerfilUsuarioTests(TestCase):
@@ -205,3 +201,64 @@ class BackendFiltroDePerfilTests(TestCase):
 
     def test_claims_sin_correo_no_entra(self):
         self.assertEqual(list(self.backend.filter_users_by_claims({})), [])
+
+
+@override_settings(ALLOWED_HOSTS=["gestion.localhost", "testserver"], GESTION_HOST="gestion.localhost")
+class RutasDeLoginTests(TestCase):
+    def test_ruta_de_login_existe_en_el_subdominio(self):
+        response = self.client.get("/oidc/authenticate/", HTTP_HOST="gestion.localhost")
+        # Redirige al consentimiento de Google.
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("accounts.google.com", response["Location"])
+
+    def test_ruta_de_login_no_existe_en_el_host_publico(self):
+        response = self.client.get("/oidc/authenticate/", HTTP_HOST="testserver")
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_no_existe_en_el_host_publico(self):
+        response = self.client.get("/admin/", HTTP_HOST="testserver")
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_existe_en_el_subdominio_de_gestion(self):
+        response = self.client.get("/admin/", HTTP_HOST="gestion.localhost")
+        # Sin sesion, el admin redirige a su propio login.
+        self.assertEqual(response.status_code, 302)
+
+    def test_sin_acceso_responde_200(self):
+        response = self.client.get("/sin-acceso/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("no tiene acceso", response.content.decode("utf-8").lower())
+
+
+@override_settings(ALLOWED_HOSTS=["gestion.localhost", "testserver"], GESTION_HOST="gestion.localhost")
+class PanelRequiereLoginTests(TestCase):
+    def setUp(self):
+        self.centro = Centro.objects.get(pk=620)
+
+    def test_anonimo_es_redirigido_al_login(self):
+        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/oidc/authenticate/", response["Location"])
+
+    def test_usuario_con_perfil_ve_el_panel(self):
+        usuario = User.objects.create_user(
+            "funcionario@cmvalparaiso.cl", email="funcionario@cmvalparaiso.cl"
+        )
+        PerfilUsuario.objects.create(
+            usuario=usuario, rol=PerfilUsuario.Rol.SELECTOR, centro=self.centro
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("construcción", response.content.decode("utf-8"))
+
+    def test_usuario_sin_perfil_no_ve_el_panel(self):
+        usuario = User.objects.create_user(
+            "colado@cmvalparaiso.cl", email="colado@cmvalparaiso.cl"
+        )
+        self.client.force_login(usuario)
+
+        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/sin-acceso/", response["Location"])
