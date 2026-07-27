@@ -104,3 +104,104 @@ class HostRoutingTests(TestCase):
     def test_url_del_chatbot_no_existe_en_subdominio_gestion(self):
         response = self.client.get("/terminos/", HTTP_HOST="gestion.localhost")
         self.assertEqual(response.status_code, 404)
+
+
+OIDC_TEST_SETTINGS = {
+    "GOOGLE_WORKSPACE_DOMAIN": "cmvalparaiso.cl",
+    "OIDC_RP_CLIENT_ID": "test-client-id",
+    "OIDC_RP_CLIENT_SECRET": "test-client-secret",
+}
+
+
+@override_settings(**OIDC_TEST_SETTINGS)
+class BackendVerifyClaimsTests(TestCase):
+    def setUp(self):
+        from gestion.auth import OIDCAuthenticationBackendGestion
+
+        self.backend = OIDCAuthenticationBackendGestion()
+
+    def _claims(self, **overrides):
+        base = {
+            "email": "funcionario@cmvalparaiso.cl",
+            "email_verified": True,
+            "hd": "cmvalparaiso.cl",
+        }
+        base.update(overrides)
+        return base
+
+    def test_acepta_cuenta_del_dominio_institucional(self):
+        self.assertTrue(self.backend.verify_claims(self._claims()))
+
+    def test_rechaza_dominio_distinto(self):
+        self.assertFalse(self.backend.verify_claims(self._claims(hd="otrodominio.cl")))
+
+    def test_rechaza_cuenta_sin_claim_hd(self):
+        claims = self._claims()
+        del claims["hd"]
+        self.assertFalse(self.backend.verify_claims(claims))
+
+    def test_rechaza_correo_no_verificado(self):
+        self.assertFalse(self.backend.verify_claims(self._claims(email_verified=False)))
+
+    def test_rechaza_claims_sin_correo(self):
+        claims = self._claims()
+        del claims["email"]
+        self.assertFalse(self.backend.verify_claims(claims))
+
+    def test_combinar_claims_prioriza_los_del_id_token(self):
+        # El endpoint de userinfo no siempre trae "hd"; el ID token si, y viene
+        # firmado por Google, asi que manda por sobre la respuesta de userinfo.
+        combinados = self.backend._combinar_claims(
+            {"email": "funcionario@cmvalparaiso.cl"},
+            {"hd": "cmvalparaiso.cl", "email": "suplantado@otro.cl"},
+        )
+        self.assertEqual(combinados["hd"], "cmvalparaiso.cl")
+        self.assertEqual(combinados["email"], "suplantado@otro.cl")
+
+
+@override_settings(**OIDC_TEST_SETTINGS)
+class BackendFiltroDePerfilTests(TestCase):
+    def setUp(self):
+        from gestion.auth import OIDCAuthenticationBackendGestion
+
+        self.backend = OIDCAuthenticationBackendGestion()
+        self.centro = Centro.objects.get(pk=620)
+        self.claims = {
+            "email": "funcionario@cmvalparaiso.cl",
+            "email_verified": True,
+            "hd": "cmvalparaiso.cl",
+        }
+
+    def _usuario(self, correo="funcionario@cmvalparaiso.cl"):
+        return User.objects.create_user(correo, email=correo)
+
+    def test_usuario_con_perfil_activo_entra(self):
+        usuario = self._usuario()
+        PerfilUsuario.objects.create(
+            usuario=usuario, rol=PerfilUsuario.Rol.SELECTOR, centro=self.centro
+        )
+        self.assertEqual(list(self.backend.filter_users_by_claims(self.claims)), [usuario])
+
+    def test_usuario_sin_perfil_no_entra(self):
+        self._usuario()
+        self.assertEqual(list(self.backend.filter_users_by_claims(self.claims)), [])
+
+    def test_usuario_con_perfil_inactivo_no_entra(self):
+        usuario = self._usuario()
+        PerfilUsuario.objects.create(
+            usuario=usuario,
+            rol=PerfilUsuario.Rol.SELECTOR,
+            centro=self.centro,
+            activo=False,
+        )
+        self.assertEqual(list(self.backend.filter_users_by_claims(self.claims)), [])
+
+    def test_correo_desconocido_no_entra(self):
+        usuario = self._usuario("otro@cmvalparaiso.cl")
+        PerfilUsuario.objects.create(
+            usuario=usuario, rol=PerfilUsuario.Rol.SELECTOR, centro=self.centro
+        )
+        self.assertEqual(list(self.backend.filter_users_by_claims(self.claims)), [])
+
+    def test_claims_sin_correo_no_entra(self):
+        self.assertEqual(list(self.backend.filter_users_by_claims({})), [])

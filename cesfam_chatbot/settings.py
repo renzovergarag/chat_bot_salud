@@ -142,6 +142,13 @@ OIDC_OP_JWKS_ENDPOINT = "https://www.googleapis.com/oauth2/v3/certs"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid email profile"
 
+AUTHENTICATION_BACKENDS = [
+    "gestion.auth.OIDCAuthenticationBackendGestion",
+    # Se mantiene el backend por password solo para superusuarios operando
+    # el admin de Django; los funcionarios entran unicamente por Google.
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # Nunca crear cuentas al vuelo: el alta la hace un ADMIN dando de alta el
 # perfil. Un correo del dominio sin perfil queda rechazado.
 OIDC_CREATE_USER = False
