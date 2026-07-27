@@ -34,12 +34,13 @@ class OIDCAuthenticationBackendGestion(OIDCAuthenticationBackend):
             logger.warning("Login rechazado: los claims no traen correo.")
             return False
 
-        if not claims.get("email_verified", False):
+        if claims.get("email_verified") is not True:
             logger.warning("Login rechazado: correo no verificado (%s).", correo)
             return False
 
         dominio = settings.GOOGLE_WORKSPACE_DOMAIN
-        if claims.get("hd") != dominio:
+        hd = claims.get("hd")
+        if not hd or hd.lower() != dominio.lower():
             logger.warning(
                 "Login rechazado: %s no pertenece al dominio %s.", correo, dominio
             )
@@ -48,12 +49,39 @@ class OIDCAuthenticationBackendGestion(OIDCAuthenticationBackend):
         return True
 
     def filter_users_by_claims(self, claims):
-        """Solo entra quien tiene un perfil de gestion activo."""
+        """Solo entra quien tiene un perfil de gestion activo y cuya cuenta
+        de Django siga activa (User.is_active). Esto solo se ejecuta al
+        momento del login: mozilla_django_oidc no vuelve a llamarlo para
+        recargar la sesion, por eso gestion/views.py::_tiene_perfil_activo
+        chequea is_active de nuevo en cada request."""
         correo = claims.get("email")
         if not correo:
             return self.UserModel.objects.none()
 
         return self.UserModel.objects.filter(
             email__iexact=correo,
+            is_active=True,
             perfil_gestion__activo=True,
         )
+
+    def update_user(self, user, claims):
+        """Sincroniza nombre y apellido desde los claims de Google en cada
+        login. El correo NO se toca aca: es la clave con la que se dio de
+        alta al usuario y con la que filter_users_by_claims hace el match;
+        sobrescribirlo desde los claims podria romper ese vinculo."""
+        cambios = False
+
+        nombre = claims.get("given_name")
+        if nombre and user.first_name != nombre:
+            user.first_name = nombre
+            cambios = True
+
+        apellido = claims.get("family_name")
+        if apellido and user.last_name != apellido:
+            user.last_name = apellido
+            cambios = True
+
+        if cambios:
+            user.save()
+
+        return user

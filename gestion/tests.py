@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 
+from gestion.auth import OIDCAuthenticationBackendGestion
 from gestion.models import PerfilUsuario
 from solicitudes.models import Centro
 
@@ -105,8 +108,6 @@ OIDC_TEST_SETTINGS = {
 @override_settings(**OIDC_TEST_SETTINGS)
 class BackendVerifyClaimsTests(TestCase):
     def setUp(self):
-        from gestion.auth import OIDCAuthenticationBackendGestion
-
         self.backend = OIDCAuthenticationBackendGestion()
 
     def _claims(self, **overrides):
@@ -137,6 +138,30 @@ class BackendVerifyClaimsTests(TestCase):
         del claims["email"]
         self.assertFalse(self.backend.verify_claims(claims))
 
+    def test_rechaza_email_verified_como_string_false(self):
+        # Google siempre manda booleano, pero el claim no deberia confiar en
+        # la verdad de python de un string: "false" es truthy.
+        self.assertFalse(
+            self.backend.verify_claims(self._claims(email_verified="false"))
+        )
+
+    def test_acepta_dominio_con_distinta_capitalizacion(self):
+        # GOOGLE_WORKSPACE_DOMAIN podria escribirse con mayusculas en el .env;
+        # la comparacion no deberia depender de eso.
+        self.assertTrue(self.backend.verify_claims(self._claims(hd="CMValparaiso.cl")))
+
+    def test_get_userinfo_prioriza_el_hd_del_id_token(self):
+        # Si alguien rompe el override de get_userinfo, la regla del dominio
+        # se cae en silencio: este test cablea que get_userinfo() realmente
+        # combina el payload (id token) con la respuesta de userinfo.
+        payload = {"hd": "cmvalparaiso.cl", "email": "funcionario@cmvalparaiso.cl"}
+        with patch(
+            "mozilla_django_oidc.auth.OIDCAuthenticationBackend.get_userinfo",
+            return_value={"email": "funcionario@cmvalparaiso.cl"},
+        ):
+            combinados = self.backend.get_userinfo("token-de-acceso", "id-token", payload)
+        self.assertEqual(combinados["hd"], "cmvalparaiso.cl")
+
     def test_combinar_claims_prioriza_los_del_id_token(self):
         # El endpoint de userinfo no siempre trae "hd"; el ID token si, y viene
         # firmado por Google, asi que manda por sobre la respuesta de userinfo.
@@ -151,8 +176,6 @@ class BackendVerifyClaimsTests(TestCase):
 @override_settings(**OIDC_TEST_SETTINGS)
 class BackendFiltroDePerfilTests(TestCase):
     def setUp(self):
-        from gestion.auth import OIDCAuthenticationBackendGestion
-
         self.backend = OIDCAuthenticationBackendGestion()
         self.centro = Centro.objects.get(pk=620)
         self.claims = {
@@ -194,6 +217,33 @@ class BackendFiltroDePerfilTests(TestCase):
 
     def test_claims_sin_correo_no_entra(self):
         self.assertEqual(list(self.backend.filter_users_by_claims({})), [])
+
+    def test_usuario_inactivo_no_entra(self):
+        # User.is_active=False y PerfilUsuario.activo=True se ven identicos
+        # ("activo") en el admin en espanol: es facil desmarcar el que no es.
+        usuario = self._usuario()
+        usuario.is_active = False
+        usuario.save()
+        PerfilUsuario.objects.create(
+            usuario=usuario, rol=PerfilUsuario.Rol.SELECTOR, centro=self.centro
+        )
+        self.assertEqual(list(self.backend.filter_users_by_claims(self.claims)), [])
+
+
+@override_settings(**OIDC_TEST_SETTINGS)
+class BackendUpdateUserTests(TestCase):
+    def setUp(self):
+        self.backend = OIDCAuthenticationBackendGestion()
+
+    def test_update_user_sincroniza_nombre_y_apellido_desde_los_claims(self):
+        usuario = User.objects.create_user(
+            "funcionario@cmvalparaiso.cl", email="funcionario@cmvalparaiso.cl"
+        )
+        self.backend.update_user(usuario, {"given_name": "Ana", "family_name": "Perez"})
+
+        usuario.refresh_from_db()
+        self.assertEqual(usuario.first_name, "Ana")
+        self.assertEqual(usuario.last_name, "Perez")
 
 
 @override_settings(ALLOWED_HOSTS=["gestion.localhost", "testserver"], GESTION_HOST="gestion.localhost")
@@ -251,6 +301,25 @@ class PanelRequiereLoginTests(TestCase):
             "colado@cmvalparaiso.cl", email="colado@cmvalparaiso.cl"
         )
         self.client.force_login(usuario)
+
+        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/sin-acceso/", response["Location"])
+
+    def test_usuario_con_is_active_false_no_ve_el_panel(self):
+        # mozilla_django_oidc sobreescribe get_user() sin llamar a
+        # user_can_authenticate(): desmarcar User.is_active en el admin no
+        # alcanza para cortar una sesion ya iniciada si no lo chequeamos aca.
+        usuario = User.objects.create_user(
+            "revocado@cmvalparaiso.cl", email="revocado@cmvalparaiso.cl"
+        )
+        PerfilUsuario.objects.create(
+            usuario=usuario, rol=PerfilUsuario.Rol.SELECTOR, centro=self.centro
+        )
+        self.client.force_login(usuario)
+
+        usuario.is_active = False
+        usuario.save()
 
         response = self.client.get("/", HTTP_HOST="gestion.localhost")
         self.assertEqual(response.status_code, 302)
