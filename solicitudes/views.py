@@ -70,6 +70,9 @@ def _normalizar_payload(payload):
     if data.get("telefono"):
         data["telefono"] = formatear_telefono_con_codigo_pais(data["telefono"])
 
+    if "centro_salud" in data:
+        data["centro_salud_id"] = data.pop("centro_salud")
+
     return data
 
 
@@ -114,8 +117,8 @@ def crear_solicitud(request):
                 "rut": solicitud.rut,
                 "edad": solicitud.edad,
                 "telefono": solicitud.telefono,
-                "centro_salud": solicitud.centro_salud,
-                "centro_salud_nombre": solicitud.get_centro_salud_display(),
+                "centro_salud": solicitud.centro_salud_id,
+                "centro_salud_nombre": solicitud.centro_salud.centro,
                 "motivo": solicitud.motivo,
                 "detalle_motivo": solicitud.detalle_motivo,
             },
