@@ -1,19 +1,9 @@
-from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
-from django.test.client import RequestFactory
 
 from gestion.models import PerfilUsuario
-from gestion.views import panel
 from solicitudes.models import Centro
-
-
-class PanelPlaceholderTests(TestCase):
-    def test_panel_redirige_a_login_sin_sesion(self):
-        request = RequestFactory().get("/")
-        request.user = AnonymousUser()
-        response = panel(request)
-        self.assertEqual(response.status_code, 302)
 
 
 class PerfilUsuarioTests(TestCase):
@@ -87,10 +77,13 @@ class PerfilUsuarioTests(TestCase):
 
 @override_settings(ALLOWED_HOSTS=["gestion.localhost", "testserver"], GESTION_HOST="gestion.localhost")
 class HostRoutingTests(TestCase):
-    def test_subdominio_gestion_resuelve_placeholder(self):
-        response = self.client.get("/", HTTP_HOST="gestion.localhost")
+    def test_subdominio_gestion_resuelve_su_urlconf(self):
+        # "/" ahora exige sesion, asi que probamos con "/sin-acceso/": vive en
+        # urls_gestion, no requiere login, y su sola resolucion en 200 confirma
+        # que el host de gestion esta usando ese urlconf y no el del chatbot.
+        response = self.client.get("/sin-acceso/", HTTP_HOST="gestion.localhost")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("construcción", response.content.decode("utf-8"))
+        self.assertIn("no tiene acceso", response.content.decode("utf-8").lower())
 
     def test_host_default_resuelve_chatbot(self):
         response = self.client.get("/", HTTP_HOST="testserver")
