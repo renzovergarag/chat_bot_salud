@@ -4,3 +4,4 @@ cryptography==49.0.0
 python-dotenv==1.0.1
 gunicorn==23.0.0
 whitenoise==6.8.2
+mozilla-django-oidc==5.0.2

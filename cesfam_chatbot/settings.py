@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "mozilla_django_oidc",
     "solicitudes",
     "gestion",
 ]
@@ -120,3 +121,39 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Autenticacion OIDC con Google Workspace -------------------------------
+# El modulo de gestion se entra solo con cuenta institucional de Google. La
+# identidad la da Google; el rol y el centro los da gestion.PerfilUsuario.
+
+# Dominio institucional. Se valida contra el claim "hd" del ID token, no
+# contra el parametro de la request: el parametro es solo una pista de UI.
+GOOGLE_WORKSPACE_DOMAIN = os.getenv("GOOGLE_WORKSPACE_DOMAIN", "cmvalparaiso.cl")
+
+OIDC_RP_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+OIDC_RP_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
+
+# Endpoints publicos de Google (estables, documentados en su discovery doc:
+# https://accounts.google.com/.well-known/openid-configuration).
+OIDC_OP_AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
+OIDC_OP_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+OIDC_OP_USER_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo"
+OIDC_OP_JWKS_ENDPOINT = "https://www.googleapis.com/oauth2/v3/certs"
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_SCOPES = "openid email profile"
+
+# Nunca crear cuentas al vuelo: el alta la hace un ADMIN dando de alta el
+# perfil. Un correo del dominio sin perfil queda rechazado.
+OIDC_CREATE_USER = False
+
+# "hd" acota el selector de cuentas de Google al dominio institucional;
+# "prompt" evita quedar pegado en la ultima cuenta usada.
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
+    "hd": GOOGLE_WORKSPACE_DOMAIN,
+    "prompt": "select_account",
+}
+
+LOGIN_URL = "oidc_authentication_init"
+LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL_FAILURE = "/sin-acceso/"
+LOGOUT_REDIRECT_URL = "/sin-acceso/"
