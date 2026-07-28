@@ -31,7 +31,7 @@ Un solo proyecto Django (`cesfam_chatbot`) con dos apps:
 - **`solicitudes`** — el chatbot público. Dueña del modelo `Solicitud` (única que
   lo crea). Se accede por `morbilidad.cmvalparaiso.cl`.
 - **`gestion`** — módulo interno de validación (en construcción). Se accede por
-  el subdominio `gestion.cmvalparaiso.cl`.
+  el subdominio `seleccion.cmvalparaiso.cl`.
 
 **Routing por subdominio:** `HostBasedUrlconfMiddleware`
 (`cesfam_chatbot/middleware.py`) fija `request.urlconf = "cesfam_chatbot.urls_gestion"`

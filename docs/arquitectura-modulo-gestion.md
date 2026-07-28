@@ -46,7 +46,7 @@ resuelve por **app + auth + routing**, no por proyecto + BD separada:
 
 ## Decisiones tomadas
 
-- **Acceso:** subdominio propio `gestion.cmvalparaiso.cl`, mismo deploy /
+- **Acceso:** subdominio propio `seleccion.cmvalparaiso.cl`, mismo deploy /
   mismo WSGI; nginx enruta ambos hosts y se agrega a `ALLOWED_HOSTS` +
   `CSRF_TRUSTED_ORIGINS`.
 - **Login:** únicamente OAuth con Google Workspace. No hay contraseñas
@@ -163,7 +163,7 @@ la regla.
 
 ## Impacto en configuración
 
-- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS`: agregar `gestion.cmvalparaiso.cl`.
+- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS`: agregar `seleccion.cmvalparaiso.cl`.
 - nginx: nuevo server_name apuntando al mismo WSGI.
 - `INSTALLED_APPS`: agregar `gestion`.
 - OAuth de Google: `client_id` y `client_secret` por `.env` (nunca en el

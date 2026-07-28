@@ -201,7 +201,7 @@ DB_PORT=3306
 
 ## Modulo de gestion: alta de usuarios
 
-El acceso a `gestion.cmvalparaiso.cl` es solo con cuenta de Google Workspace
+El acceso a `seleccion.cmvalparaiso.cl` es solo con cuenta de Google Workspace
 institucional, y ademas exige un perfil dado de alta. Un correo del dominio
 sin perfil **no entra**: no se crean cuentas al vuelo.
 
@@ -222,7 +222,7 @@ Se necesita un **OAuth 2.0 Client ID** tipo *Web application*. Redirect URIs
 autorizados:
 
 - Local: `http://gestion.localhost:8000/oidc/callback/`
-- Produccion: `https://gestion.cmvalparaiso.cl/oidc/callback/`
+- Produccion: `https://seleccion.cmvalparaiso.cl/oidc/callback/`
 
 El `client_id` y el `client_secret` van en `.env` (ver `.env.example`); en
 produccion, dentro del secret `ENV_PROD` del workflow de deploy.

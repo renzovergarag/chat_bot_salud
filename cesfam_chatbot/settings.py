@@ -21,7 +21,9 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# Host del modulo interno de gestion. En produccion: gestion.cmvalparaiso.cl
+# Host del modulo interno de gestion. En produccion: seleccion.cmvalparaiso.cl
+# El setting se sigue llamando GESTION_HOST porque nombra a la app `gestion`;
+# lo que cambia es el hostname publico con que se accede a ella.
 GESTION_HOST = os.getenv("GESTION_HOST", "gestion.localhost")
 if GESTION_HOST and GESTION_HOST not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(GESTION_HOST)
