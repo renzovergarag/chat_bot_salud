@@ -117,38 +117,54 @@ este documento.
 
 `Gestion` en la app nueva, con `OneToOne → Solicitud` (mantiene el modelo del
 chatbot limpio del flujo administrativo, pero con FK real por compartir BD en
-un mismo proyecto):
-
-- Etapa 1: estado de hora (`PENDIENTE` / `CON_HORA` / `SIN_HORA`),
-  `revisado_por` (FK User), `fecha_revision`.
-- Etapa 2: `contactado` (bool), `fecha_contacto`, `contactado_por` (FK User),
-  `resultado_contacto`.
+un mismo proyecto). Guarda la decisión del selector, la gestión de contacto del
+comunicador y el cierre, en campos separados.
 
 Las dos etapas corresponden una a una con los roles operativos: Etapa 1 la
 opera el `SELECTOR` y Etapa 2 el `COMUNICADOR`.
+
+El detalle del modelo, con todos sus campos, está en
+`docs/superpowers/specs/2026-07-28-modulo-seleccion-design.md`. Ese documento
+es la fuente de verdad del flujo; acá solo queda el encuadre arquitectónico.
 
 Filtrado del queryset: `ADMIN` y `SUPERVISOR_DAS` ven todos los centros; el
 resto ve solo su `centro` y su `centro_satelite`. El filtro se deriva del rol
 del perfil, no de una lista de centros por usuario.
 
-### Etapa 1 — cola de revisión
+### Etapa 1 — cola del selector
 
-Vista custom tipo *worklist* (no el admin de Django, que no calza con el flujo
-de cupo limitado):
+Vista custom tipo *worklist* (no el admin de Django, que no calza con el flujo).
+Lista de pendientes del centro, ordenada por la prioridad que calcula el
+chatbot. Sobre cada solicitud el selector toma una de tres decisiones:
+**aceptar** (registrando una prioridad clínica propia), **rechazar** (con
+motivo de un catálogo editable) o **no aplica** (pruebas o simulaciones, que
+salen del flujo).
 
-- Lista ordenada por `puntaje_prioridad` descendente, filtrada por centro.
-- Acción por solicitud: asignar / denegar hora.
-- El cupo (ej. 30 de 50) es **informativo** ("X asignadas / N cupos"), porque
-  el orden no garantiza que del 1 al N todos reciban hora: la decisión es
-  manual caso a caso. Formalizar cupos queda fuera del MVP.
+> Reemplaza a la versión anterior de este documento, que definía la Etapa 1
+> como "asignar / denegar hora" con estados `PENDIENTE` / `CON_HORA` /
+> `SIN_HORA`, y un contador de cupos informativo. La administración de cupos
+> queda fuera de alcance.
 
-### Etapa 2 — WhatsApp por deep-link
+Conviven **dos prioridades con la misma escala** y sin sobrescribirse: la
+administrativa, que calcula el chatbot y ordena esta cola, y la clínica, que
+asigna el selector y ordena la cola del comunicador.
 
-Sin integración con WhatsApp. El backend arma el enlace
+### Etapa 2 — comunicador y WhatsApp por deep-link
+
+Una sola tabla: aceptadas primero, ordenadas por prioridad clínica, y las
+rechazadas al final. El comunicador llama a las aceptadas para ofrecer la
+citación y registra el desenlace; los "no contesta" suman un intento y el caso
+sigue abierto.
+
+Sin integración con la API de WhatsApp. El backend arma el enlace
 `https://wa.me/<telefono>?text=<mensaje urlencoded>`. El teléfono ya se guarda
-con código de país (`formatear_telefono_con_codigo_pais`). Plantilla de
-mensaje por caso (con hora / sin hora). Al usar el enlace, se marca
-`contactado`. Plantillas editables por config queda como iteración posterior.
+con código de país (`formatear_telefono_con_codigo_pais`), y el texto sale del
+motivo de rechazo, editable desde el admin. Usar el enlace **registra un
+intento, no un contacto**: abrir una ventana no prueba que el mensaje se haya
+enviado.
+
+Los rechazados **se cierran solos a las 24 horas**, distinguiendo si se les
+avisó por WhatsApp o si nadie los contactó. Los aceptados no se cierran solos.
 
 ### Ventana horaria del chatbot (L-V 08:00–08:20)
 
@@ -174,14 +190,21 @@ la regla.
 
 ## Estado
 
-Decisión de arquitectura **aprobada**. Autenticación y perfiles
-**implementados** (ver `docs/superpowers/plans/2026-07-27-login-google-perfiles.md` y
-`docs/superpowers/specs/2026-07-27-login-google-perfiles-design.md`).
-Pendientes: modelo `Gestion` con Etapas 1 y 2, vistas worklist, deep-link de
-WhatsApp y ventana horaria.
+Decisión de arquitectura **aprobada**.
+
+- Autenticación y perfiles: **implementados** (ver
+  `docs/superpowers/plans/2026-07-27-login-google-perfiles.md` y
+  `docs/superpowers/specs/2026-07-27-login-google-perfiles-design.md`).
+- Etapas 1 y 2: **diseñadas, sin implementar**. Spec en
+  `docs/superpowers/specs/2026-07-28-modulo-seleccion-design.md`, pendiente de
+  validación con el equipo.
+- Ventana horaria del chatbot: **pendiente**, sin diseñar. Queda fuera del
+  módulo de selección; es trabajo del chatbot.
 
 ## Referencias
 
+- `docs/superpowers/specs/2026-07-28-modulo-seleccion-design.md` — flujo
+  completo de las Etapas 1 y 2, y modelo `Gestion` en detalle.
 - `solicitudes/models.py` — modelo `Solicitud`.
 - `solicitudes/views.py:77` — `crear_solicitud` (punto donde validar horario).
 - `cesfam_chatbot/settings.py:18-30` — `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`.
