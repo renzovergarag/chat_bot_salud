@@ -10,7 +10,7 @@ Relacionado: `docs/arquitectura-modulo-gestion.md`, `docs/superpowers/plans/2026
 
 ## Objetivo
 
-Que un funcionario entre a `gestion.cmvalparaiso.cl` autenticándose con su
+Que un funcionario entre a `seleccion.cmvalparaiso.cl` autenticándose con su
 cuenta de Google Workspace institucional, y que el sistema sepa **quién es**
 (identidad, vía Google) y **qué puede ver** (rol y centro, vía una tabla
 propia). Quien no tenga perfil dado de alta no entra, aunque su login con
@@ -173,7 +173,7 @@ Helpers de alcance, consumidos después por los querysets de la operación:
 
 ## Flujo de login
 
-1. Anónimo entra a `gestion.cmvalparaiso.cl/` → `login_required` redirige a
+1. Anónimo entra a `seleccion.cmvalparaiso.cl/` → `login_required` redirige a
    `/oidc/authenticate/`.
 2. `mozilla_django_oidc` redirige a Google con `hd` y `prompt=select_account`.
 3. Google vuelve a `/oidc/callback/` con el code; la librería canjea el token.
@@ -204,8 +204,8 @@ y que una cuenta Gmail personal quede efectivamente fuera.
 
 - Crear un **OAuth 2.0 Client ID** tipo *Web application* en Google Cloud
   Console. Redirect URIs: `http://gestion.localhost:8000/oidc/callback/` (local)
-  y `https://gestion.cmvalparaiso.cl/oidc/callback/` (producción).
+  y `https://seleccion.cmvalparaiso.cl/oidc/callback/` (producción).
 - Sumar `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` y
   `GOOGLE_WORKSPACE_DOMAIN` al secret `ENV_PROD` del workflow de deploy.
-- Agregar `https://gestion.cmvalparaiso.cl` a `CSRF_TRUSTED_ORIGINS`.
+- Agregar `https://seleccion.cmvalparaiso.cl` a `CSRF_TRUSTED_ORIGINS`.
 - El subdominio necesita DNS y certificado antes del primer login real.

@@ -53,10 +53,10 @@ jobs:
           # Flags de produccion no sensibles (versionados aqui, no en el secret).
           cat >> .env <<'EOF'
           DEBUG=False
-          ALLOWED_HOSTS=morbilidad.cmvalparaiso.cl,gestion.cmvalparaiso.cl,127.0.0.1,localhost
-          CSRF_TRUSTED_ORIGINS=https://morbilidad.cmvalparaiso.cl,https://gestion.cmvalparaiso.cl
+          ALLOWED_HOSTS=morbilidad.cmvalparaiso.cl,seleccion.cmvalparaiso.cl,127.0.0.1,localhost
+          CSRF_TRUSTED_ORIGINS=https://morbilidad.cmvalparaiso.cl,https://seleccion.cmvalparaiso.cl
           USE_PROXY_SSL_HEADER=True
-          GESTION_HOST=gestion.cmvalparaiso.cl
+          GESTION_HOST=seleccion.cmvalparaiso.cl
           EOF
 
       - name: Migraciones
