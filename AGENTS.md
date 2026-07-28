@@ -7,11 +7,14 @@ en construcción, un módulo interno de gestión para validar esas solicitudes.
 ## Comandos
 
 ```bash
-# Tests (usar SQLite para no depender de MySQL). Django test runner, NO pytest.
-DB_ENGINE=sqlite .venv/bin/python manage.py test
+# Levantar la base local (MySQL 8.4, mismo motor que produccion)
+docker compose up -d
 
-# Servidor local con SQLite
-DB_ENGINE=sqlite .venv/bin/python manage.py runserver
+# Tests. Django test runner, NO pytest.
+.venv/bin/python manage.py test
+
+# Servidor local
+.venv/bin/python manage.py runserver
 
 # Migraciones
 .venv/bin/python manage.py makemigrations
@@ -42,8 +45,24 @@ La decisión "un proyecto vs dos con BD compartida" está documentada y cerrada 
 
 ## Base de datos
 
-MySQL 8.4 en producción; SQLite en local con `DB_ENGINE=sqlite`. Toda la config
-se lee de `.env` (ver `.env.example`). `TextField` mapea a `LONGTEXT` en MySQL.
+**MySQL 8.4 en producción y también en local**, vía el `docker-compose.yml` de
+la raíz (contenedor `saludbot-mysql`, en `127.0.0.1:3306`). Toda la config se lee
+de `.env` (ver `.env.example`); con `DB_ENGINE=mysql` no hace falta anteponer
+nada a los comandos. `TextField` mapea a `LONGTEXT` en MySQL.
+
+Existe un fallback a SQLite con `DB_ENGINE=sqlite`, pero **no usarlo para dar
+por buena una tarea**: esconde diferencias reales con producción. Ejemplo vivido:
+el contador `AUTO_INCREMENT` de InnoDB no hace rollback con la transacción del
+`TestCase`, y el rowid de SQLite sí, así que un test que afirmaba `id == 1`
+pasaba en SQLite y fallaba en MySQL.
+
+Para que el runner pueda crear su base de tests, el usuario de la app necesita
+privilegios sobre `test\_%`. Si aparece `Access denied ... to database
+'test_chat_bot_salud'`, aplicar con root:
+
+```sql
+GRANT ALL PRIVILEGES ON `test\_%`.* TO 'saludbot'@'%'; FLUSH PRIVILEGES;
+```
 
 ## Convenciones
 

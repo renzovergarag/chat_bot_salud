@@ -108,7 +108,11 @@ class SolicitudTests(TestCase):
         self.assertEqual(response.status_code, 201)
         body = response.json()
         self.assertTrue(body["ok"])
-        self.assertEqual(body["id_solicitud"], 1)
+        # Se compara contra la fila realmente creada, no contra un 1 fijo: el
+        # contador AUTO_INCREMENT de InnoDB no vuelve atras con el rollback de
+        # la transaccion del TestCase, asi que el id depende de cuantas filas
+        # crearon los tests anteriores.
+        self.assertEqual(body["id_solicitud"], Solicitud.objects.get().id_solicitud)
         self.assertEqual(body["priorizacion_solicitud"], "BAJA")
         self.assertEqual(body["puntaje_prioridad"], 0)
         self.assertEqual(body["resumen"]["rut"], "25747311-2")
