@@ -13,6 +13,7 @@ class CentroAdmin(admin.ModelAdmin):
 class SolicitudAdmin(admin.ModelAdmin):
     list_display = (
         "id_solicitud",
+        "nombre",
         "rut",
         "edad",
         "sexo",
@@ -33,5 +34,5 @@ class SolicitudAdmin(admin.ModelAdmin):
         "Neurodivergente_prais_gestante",
         "centro_salud",
     )
-    search_fields = ("rut", "telefono", "motivo", "detalle_motivo")
+    search_fields = ("nombre", "rut", "telefono", "motivo", "detalle_motivo")
     readonly_fields = ("date_solicitud",)
