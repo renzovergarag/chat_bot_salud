@@ -512,6 +512,7 @@
     addMessage("Estoy registrando tu solicitud en el sistema.", "bot");
 
     const payload = {
+      nombre: state.data.nombre,
       rut: state.data.rut,
       edad: state.data.edad,
       telefono: state.data.telefono,
@@ -544,7 +545,7 @@
       }
 
       addMessage(
-        `Solicitud registrada correctamente.<br><br><strong>ID de solicitud:</strong> ${result.id_solicitud}<br><strong>RUT:</strong> ${escapeHtml(result.resumen.rut)}<br><strong>Centro de salud:</strong> ${escapeHtml(result.resumen.centro_salud_nombre || state.selectedCentroName)}<br><strong>Edad:</strong> ${escapeHtml(result.resumen.edad)}`,
+        `Solicitud registrada correctamente.<br><br><strong>ID de solicitud:</strong> ${result.id_solicitud}<br><strong>Nombre:</strong> ${escapeHtml(result.resumen.nombre)}<br><strong>RUT:</strong> ${escapeHtml(result.resumen.rut)}<br><strong>Centro de salud:</strong> ${escapeHtml(result.resumen.centro_salud_nombre || state.selectedCentroName)}<br><strong>Edad:</strong> ${escapeHtml(result.resumen.edad)}`,
         "bot",
         { html: true }
       );

@@ -46,6 +46,10 @@ class Solicitud(models.Model):
         OTRO = "OTRO", "Otro"
 
     id_solicitud = models.BigAutoField(primary_key=True)
+    # default="" solo para poder agregar la columna sobre las filas historicas
+    # (creadas cuando el chatbot no persistia el nombre). En filas nuevas el
+    # campo es obligatorio: blank=False hace que full_clean lo exija.
+    nombre = models.CharField(max_length=150, default="")
     rut = models.CharField(max_length=12, validators=[validar_rut_chileno])
     edad = models.PositiveSmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(120)])
     sexo = models.CharField(max_length=1, choices=Sexo.choices)
@@ -83,6 +87,11 @@ class Solicitud(models.Model):
 
     def clean(self):
         super().clean()
+        if self.nombre:
+            self.nombre = " ".join(self.nombre.split())
+            if not self.nombre:
+                raise ValidationError({"nombre": "Debes indicar el nombre del paciente."})
+
         if self.rut:
             self.rut = formatear_rut_sin_puntos(self.rut)
 

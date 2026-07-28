@@ -12,6 +12,7 @@ from .validators import formatear_telefono_con_codigo_pais, validar_rut_chileno,
 class SolicitudTests(TestCase):
     def valid_payload(self):
         return {
+            "nombre": "Ana Maria Perez",
             "rut": "25747311-2",
             "edad": 34,
             "sexo": "F",
@@ -37,6 +38,7 @@ class SolicitudTests(TestCase):
         self.assertEqual(solicitud.id_solicitud, 1)
         self.assertEqual(solicitud.priorizacion_solicitud, "BAJA")
         self.assertEqual(solicitud.puntaje_prioridad, 0)
+        self.assertEqual(solicitud.nombre, "Ana Maria Perez")
         self.assertEqual(solicitud.rut, "25747311-2")
         self.assertEqual(solicitud.telefono, "+56949106239")
         self.assertEqual(solicitud.centro_salud_id, 620)
@@ -115,6 +117,8 @@ class SolicitudTests(TestCase):
         self.assertEqual(body["id_solicitud"], Solicitud.objects.get().id_solicitud)
         self.assertEqual(body["priorizacion_solicitud"], "BAJA")
         self.assertEqual(body["puntaje_prioridad"], 0)
+        self.assertEqual(Solicitud.objects.get().nombre, "Ana Maria Perez")
+        self.assertEqual(body["resumen"]["nombre"], "Ana Maria Perez")
         self.assertEqual(body["resumen"]["rut"], "25747311-2")
         self.assertEqual(body["resumen"]["telefono"], "+56949106239")
         self.assertEqual(body["resumen"]["centro_salud"], 620)
@@ -137,6 +141,7 @@ class SolicitudTests(TestCase):
             reverse("crear_solicitud"),
             data=json.dumps(
                 {
+                    "nombre": "Ana Maria Perez",
                     "rut": "25747311-2",
                     "edad": 34,
                     "telefono": "949106239",
@@ -151,12 +156,51 @@ class SolicitudTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         solicitud = Solicitud.objects.get()
+        self.assertEqual(solicitud.nombre, "Ana Maria Perez")
         self.assertEqual(solicitud.rut, "25747311-2")
         self.assertEqual(solicitud.telefono, "+56949106239")
         self.assertEqual(solicitud.centro_salud_id, 620)
         self.assertEqual(solicitud.sexo, "N")
         self.assertEqual(solicitud.puntaje_prioridad, 1)
         self.assertEqual(solicitud.priorizacion_solicitud, "BAJA")
+
+    def test_endpoint_rechaza_sin_nombre(self):
+        payload = self.valid_payload()
+        payload.pop("nombre")
+        response = self.client.post(
+            reverse("crear_solicitud"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("nombre", response.json()["errors"])
+        self.assertEqual(Solicitud.objects.count(), 0)
+
+    def test_endpoint_rechaza_nombre_en_blanco(self):
+        payload = self.valid_payload()
+        payload["nombre"] = "   "
+        response = self.client.post(
+            reverse("crear_solicitud"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("nombre", response.json()["errors"])
+        self.assertEqual(Solicitud.objects.count(), 0)
+
+    def test_endpoint_normaliza_espacios_del_nombre(self):
+        payload = self.valid_payload()
+        payload["nombre"] = "  Ana   Maria  Perez  "
+        response = self.client.post(
+            reverse("crear_solicitud"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Solicitud.objects.get().nombre, "Ana Maria Perez")
 
     def test_endpoint_guarda_condicion_otro_y_foto(self):
         payload = self.valid_payload()

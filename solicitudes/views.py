@@ -62,7 +62,8 @@ def _normalizar_payload(payload):
     data.setdefault("Neurodivergente_prais_gestante_otro", "")
     data.setdefault("acepta_terminos", False)
 
-    data.pop("nombre", None)
+    if data.get("nombre"):
+        data["nombre"] = " ".join(str(data["nombre"]).split())
 
     if data.get("rut"):
         data["rut"] = formatear_rut_sin_puntos(data["rut"])
@@ -114,6 +115,7 @@ def crear_solicitud(request):
             "priorizacion_solicitud": solicitud.priorizacion_solicitud,
             "puntaje_prioridad": solicitud.puntaje_prioridad,
             "resumen": {
+                "nombre": solicitud.nombre,
                 "rut": solicitud.rut,
                 "edad": solicitud.edad,
                 "telefono": solicitud.telefono,
