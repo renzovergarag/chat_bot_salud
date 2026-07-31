@@ -1,6 +1,7 @@
 # Módulo de selección: etapas del selector y del comunicador — Diseño
 
 Fecha: 2026-07-28
+Versión: 2 — incorpora los acuerdos de la reunión de validación del 2026-07-30
 Relacionado: `docs/arquitectura-modulo-gestion.md`,
 `docs/superpowers/specs/2026-07-27-login-google-perfiles-design.md`
 
@@ -58,6 +59,22 @@ confusión más probable al leer este documento, así que conviene fijarla prime
 
 Ambas quedan guardadas. Con el tiempo, comparar una con otra permite medir qué
 tan bien acierta el cálculo automático y calibrarlo con datos reales.
+
+### La prioridad administrativa no es puramente administrativa
+
+Se llama "administrativa" porque su **función** lo es: ordenar la cola del
+selector. Pero conviene dejar explícito que el cálculo de
+`solicitudes/priorizacion.py` no se limita a los criterios de atención
+preferente (edad, condición declarada, credencial de cuidador de persona con
+discapacidad): también suma puntaje por **palabras clave clínicas** del motivo
+de consulta y su detalle —`dolor pecho`, `convulsion`, `fiebre`, entre otras—.
+
+Esto **se mantiene sin modificación**. Sin ese componente, una consulta grave de
+una persona sin ningún criterio preferente quedaría al final de la cola. Lo que
+sí importa tener claro al leer este documento es que la puntuación del chatbot
+**no es un triaje clínico y no reemplaza el criterio del selector**: define un
+orden de lectura, no una evaluación. La evaluación clínica es exactamente lo que
+el selector aporta cuando asigna la prioridad clínica.
 
 ## Ciclo de vida de una solicitud
 
@@ -283,10 +300,11 @@ el cron hace que una caída silenciosa le muestre casos vencidos al comunicador.
 
 ## Casos borde resueltos
 
-- **Solicitudes anteriores al despliegue.** No tienen fila de `Gestion`. La
-  migración las crea en `PENDIENTE`, de modo que el selector encontrará la cola
-  cargada con el histórico el primer día. **Si el equipo prefiere partir de
-  cero, se crean como `NO_APLICA`; hay que decidirlo antes de desplegar.**
+- **Solicitudes anteriores al despliegue.** No hay histórico que migrar: el
+  sistema no está en producción. La migración crea la fila de `Gestion` en
+  `PENDIENTE` para las solicitudes que existan en la base al aplicarla —en la
+  práctica, solo datos de desarrollo—, así que no hace falta decidir nada antes
+  de desplegar.
 - **Teléfono inválido o vacío.** No se arma el enlace de WhatsApp y la fila lo
   indica. El caso se sigue gestionando por teléfono.
 - **Un rechazado que se cierra solo mientras el comunicador lo tenía abierto.**
@@ -317,28 +335,46 @@ Con el test runner de Django contra MySQL, como el resto del proyecto.
 No automatizable: que WhatsApp Web abra el chat correcto en el equipo del
 comunicador.
 
+## Decisiones cerradas en la reunión del 2026-07-30
+
+Participantes: Renzo, Dani, Jani, Paola, Billy, Emily.
+
+- **El diseño de doble priorización se acepta** tal como está en este documento
+  y guía el desarrollo.
+- **Los roles y permisos** de la tabla de más arriba quedan confirmados, con
+  `ADMIN` de solo lectura en las pantallas operativas y `SOME` con los mismos
+  permisos que `FULL`.
+- **24 horas es el plazo correcto** para el cierre automático de los rechazados,
+  sin intervención del comunicador. El caso desaparece de la tabla al cumplirse
+  el plazo desde `fecha_decision`.
+- **No se implementa bloqueo por concurrencia**: se acepta la regla del último
+  guardado.
+- **Teléfono como canal principal** de los casos aceptados; WhatsApp para avisar
+  los rechazos y como respaldo cuando no contestan el teléfono.
+- **El histórico no requiere decisión**: no hay solicitudes en producción.
+
+Quedan fuera del alcance de esta spec, pero se acordaron en la misma reunión y
+se abordan en el chatbot en otra iteración: mover los términos y condiciones al
+inicio del flujo, e informar en el mensaje de cierre una ventana máxima de
+contacto. También se evaluará a futuro un código QR para verificar la
+autenticidad de los mensajes enviados al paciente.
+
 ## Decisiones que faltan confirmar con el equipo
 
-Ninguna bloquea el diseño; todas tienen un valor propuesto. Conviene cerrarlas
-en la reunión de validación.
-
-**1. La lista inicial de motivos de rechazo.** Propuesta de partida, a corregir
-por el equipo clínico:
+**La lista inicial de motivos de rechazo.** Propuesta de partida, pendiente de
+validación por el equipo clínico (María Isabel) antes de la próxima reunión:
 
 | Motivo | Mensaje al paciente (borrador) |
 | --- | --- |
 | No corresponde a morbilidad | Hola {nombre}, su solicitud no corresponde a atención de morbilidad. Para controles o enfermedades crónicas debe agendar por el canal habitual de su centro. |
-| Requiere atención de urgencia | Hola {nombre}, por lo que describe necesita atención inmediata. Acuda al SAPU o servicio de urgencia más cercano. |
 | No pertenece al centro | Hola {nombre}, no figura inscrito/a en el centro indicado. Contacte al centro donde está inscrito/a. |
 | Datos insuficientes | Hola {nombre}, su solicitud no incluye información suficiente para evaluarla. Puede volver a ingresarla detallando su motivo de consulta. |
 | Sin cupos disponibles | Hola {nombre}, no quedan cupos disponibles para hoy. Puede volver a solicitar atención mañana. |
 | Solicitud duplicada | Hola {nombre}, ya recibimos una solicitud suya para esta fecha y está siendo gestionada. |
 
-**2. Qué hacer con el histórico** de solicitudes al desplegar: cargarlas como
-`PENDIENTE` (propuesto) o descartarlas como `NO_APLICA`.
-
-**3. Si 24 horas es el plazo correcto** para el cierre automático de rechazados,
-o el equipo prefiere otro.
+No hay un motivo "requiere atención de urgencia": el chatbot ya le advierte al
+paciente, antes de empezar el formulario, que ante una urgencia debe acudir
+directamente al servicio correspondiente.
 
 ## Referencias
 
@@ -347,3 +383,10 @@ o el equipo prefiere otro.
 - `gestion/models.py` — `PerfilUsuario`, roles y `centros_permitidos()`.
 - `docs/superpowers/specs/2026-07-27-login-google-perfiles-design.md` — roles y alcance por centro.
 - `docs/arquitectura-modulo-gestion.md` — decisión de un solo proyecto y routing por subdominio.
+
+## Historial de versiones
+
+| Versión | Fecha | Cambios |
+| --- | --- | --- |
+| 1 | 2026-07-28 | Versión inicial, para validar con el equipo. |
+| 2 | 2026-07-30 | Acuerdos de la reunión de validación: se cierran el plazo de 24 horas y la pregunta del histórico; se registran los roles, el canal de contacto y la regla de concurrencia como confirmados; se explicita que la prioridad administrativa incorpora criterios clínicos; se retira el motivo de rechazo "requiere atención de urgencia". |
